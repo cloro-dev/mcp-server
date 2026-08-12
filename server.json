@@ -1,0 +1,34 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "dev.cloro/cloro",
+  "title": "cloro",
+  "description": "Scrape AI answer engines and Google Search/News with country and state-level geo-targeting.",
+  "version": "0.1.0",
+  "websiteUrl": "https://cloro.dev/docs/integrations/mcp",
+  "icons": [
+    {
+      "src": "https://cloro.dev/favicon-192.png",
+      "mimeType": "image/png",
+      "sizes": ["192x192"]
+    },
+    {
+      "src": "https://cloro.dev/logo.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": ["any"]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.cloro.dev/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer <your cloro API key>. Create one at https://cloro.dev.",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
