@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Test
+        run: npx vitest run
+
+      - name: Build
+        run: npm run build
+
+      # The build is only useful if the server still speaks MCP. Run a real
+      # initialize + tools/list handshake over stdio and assert the ten tools
+      # are registered, so a broken tool module fails here rather than in a
+      # client.
+      - name: Smoke test the MCP handshake
+        run: |
+          printf '%s\n%s\n%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}' \
+            '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+            '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
+          | MCP_TRANSPORT=stdio CLORO_API_KEY=sk_test_ci node dist/index.js 2>/dev/null \
+          | node -e '
+              let raw = "";
+              process.stdin.on("data", (c) => (raw += c));
+              process.stdin.on("end", () => {
+                const tools = raw
+                  .split("\n")
+                  .filter(Boolean)
+                  .map((l) => JSON.parse(l))
+                  .find((m) => m.id === 2)?.result?.tools;
+                if (!tools) throw new Error("no tools/list response");
+                console.log(`${tools.length} tools: ${tools.map((t) => t.name).join(", ")}`);
+                if (tools.length !== 10) {
+                  throw new Error(`expected 10 tools, got ${tools.length}`);
+                }
+              });
+            '
