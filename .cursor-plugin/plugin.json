@@ -1,0 +1,33 @@
+{
+  "name": "cloro",
+  "displayName": "cloro",
+  "version": "0.1.0",
+  "description": "Query ChatGPT, Perplexity, Gemini, Copilot, Grok, Google AI Mode, Google Search and Google News as agent tools, with country and state-level geo-targeting.",
+  "author": {
+    "name": "cloro",
+    "email": "info@cloro.dev"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "serp-api",
+    "ai-search",
+    "chatgpt",
+    "perplexity",
+    "google-search",
+    "scraping",
+    "geo-targeting"
+  ],
+  "logo": "assets/logo.svg",
+  "variables": {
+    "type": "object",
+    "properties": {
+      "CLORO_API_KEY": {
+        "type": "string",
+        "title": "cloro API key",
+        "description": "Your cloro API key. Create one at https://dashboard.cloro.dev. The Free tier gives 500 credits a month."
+      }
+    },
+    "required": ["CLORO_API_KEY"]
+  }
+}
