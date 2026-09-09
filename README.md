@@ -29,6 +29,16 @@ If your client can set headers, use `https://mcp.cloro.dev/mcp` with `Authorizat
 claude mcp add --transport http cloro https://mcp.cloro.dev/YOUR_CLORO_API_KEY/mcp
 ```
 
+### In Cursor
+
+This repo is also a Cursor plugin. Install it from the Cursor marketplace, or point Cursor at the repo, and Cursor prompts for one variable:
+
+| Variable | Value |
+| --- | --- |
+| `CLORO_API_KEY` | Your key from the [dashboard](https://dashboard.cloro.dev) |
+
+Cursor stores the key on its side and sends it as `Authorization: Bearer`, so the key stays out of the URL and out of the repo. The manifest is `.cursor-plugin/plugin.json` and the server definition is `mcp.json`.
+
 ### Running it yourself
 
 ```bash

@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "cloro": {
+      "url": "https://mcp.cloro.dev/mcp",
+      "headers": {
+        "Authorization": "Bearer ${CLORO_API_KEY}"
+      }
+    }
+  }
+}
