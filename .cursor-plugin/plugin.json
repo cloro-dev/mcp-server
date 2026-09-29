@@ -1,7 +1,7 @@
 {
   "name": "cloro",
   "displayName": "cloro",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Query ChatGPT, Perplexity, Gemini, Copilot, Grok, Google AI Mode, Google Search and Google News as agent tools, with country and state-level geo-targeting.",
   "author": {
     "name": "cloro",

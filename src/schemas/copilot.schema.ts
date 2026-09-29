@@ -7,6 +7,7 @@ import { getAvailableCountries } from "./utils";
 const COPILOT_BLOCKED_COUNTRIES: string[] = [
   "BY", // Belarus
   "CN", // China
+  "IR",
   "RU", // Russia
   "SY", // Syria
   "VE", // Venezuela

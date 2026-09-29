@@ -19,6 +19,7 @@ export * from "./perplexity.schema";
 export * from "./country.schema";
 export * from "./device.schema";
 export * from "./state.schema";
+export * from "./geo.schema";
 export * from "./country-models";
 export * from "./headers";
 export * from "./all-countries";

@@ -7,7 +7,6 @@ import { getAvailableCountries } from "./utils";
 
 const CHATGPT_BLOCKED_COUNTRIES: string[] = [
   "CN", // China
-  "CZ", // Czechia
   "HK", // Hong Kong
   "IR", // Iran
   "MO", // Macao
@@ -38,4 +37,9 @@ export const chatgptSchema = withState({
     })
     .partial()
     .optional(),
+  // Serve ChatGPT's legacy (desktop) UI instead of the default mobile-web UI.
+  // The desktop UI is where ads/shopping render, so callers that need them pass
+  // this. Defaults to the mobile-web UI when unset.
+  legacy: z.boolean().optional(),
+  disableWebSearch: z.boolean().optional(),
 });
