@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createCountrySchema } from "./country.schema";
+import { geoFields, refineGeo, applyGeo } from "./geo.schema";
 
 // Full list available in https://support.google.com/websearch/answer/16011537#zippy=%2Csupported-countries-territories
 
@@ -259,7 +259,12 @@ export const aimodeSchema = z
       .min(1, "Prompt cannot be empty")
       .max(10_000, "Prompt is too long (max 10,000 characters)")
       .trim(),
-    country: createCountrySchema(AIMODE_AVAILABLE_COUNTRIES, []),
+    // `hl` is the interface-language override (ENG-828): a country alone
+    // cannot express "German interface from a US exit", and multilingual
+    // countries (CH, BE, CA) resolve to one dominant language. `gl` is the
+    // result geography, validated against AI Mode's own supported-country
+    // list. `country` is the deprecated alias normalized into `gl`.
+    ...geoFields(AIMODE_AVAILABLE_COUNTRIES),
     location: z.string().trim().optional(),
     uule: z.string().trim().optional(),
     device: z.enum(["desktop", "mobile"]).default("desktop"),
@@ -272,7 +277,9 @@ export const aimodeSchema = z
       .partial()
       .optional(),
   })
+  .superRefine((data, ctx) => refineGeo(data, ctx))
   .refine((data) => !(data.location && data.uule), {
     message: "Cannot set both location and uule; provide only one",
     path: ["uule"],
-  });
+  })
+  .transform(applyGeo);

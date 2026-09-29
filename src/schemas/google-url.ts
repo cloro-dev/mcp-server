@@ -95,6 +95,29 @@ const pagesForResultCount = (num: number): number => {
 const readTrimmed = (params: URLSearchParams, key: string): string | null =>
   params.get(key)?.trim() || null;
 
+/**
+ * Read a param without form decoding. `URLSearchParams` turns a literal `+`
+ * into a space, which corrupts a UULE token (`w+CAIQ...` becomes `w CAIQ...`)
+ * so Google ignores it and falls back to the session's location history.
+ */
+const readRaw = (search: string, key: string): string | null => {
+  const decode = (s: string): string => {
+    try {
+      return decodeURIComponent(s);
+    } catch {
+      return s;
+    }
+  };
+  for (const pair of search.replace(/^\?/, "").split("&")) {
+    const eq = pair.indexOf("=");
+    const name = eq === -1 ? pair : pair.slice(0, eq);
+    if (decode(name) !== key) continue;
+    const value = eq === -1 ? "" : decode(pair.slice(eq + 1));
+    return value.trim() || null;
+  }
+  return null;
+};
+
 export const parseGoogleSearchUrl = (raw: string): GoogleUrlParseResult => {
   let url: URL;
   try {
@@ -131,7 +154,7 @@ export const parseGoogleSearchUrl = (raw: string): GoogleUrlParseResult => {
     query,
     country: readTrimmed(url.searchParams, "gl")?.toUpperCase() ?? null,
     language: readTrimmed(url.searchParams, "hl")?.toLowerCase() ?? null,
-    uule: readTrimmed(url.searchParams, "uule"),
+    uule: readRaw(url.search, "uule"),
     startOffset: readNonNegativeInt(url.searchParams, "start", 0),
     pages: pagesForResultCount(
       readNonNegativeInt(url.searchParams, "num", RESULTS_PER_PAGE),

@@ -99,7 +99,6 @@ describe("cloro MCP server", () => {
       "scrape_copilot",
       "scrape_perplexity",
       "scrape_grok",
-      "scrape_google_ai_mode",
     ]) {
       const tool = tools.find((t) => t.name === name)!;
       expect(tool.inputSchema.required).toEqual(
@@ -108,16 +107,32 @@ describe("cloro MCP server", () => {
     }
   });
 
+  it("offers hl and gl on the Google-family tools", () => {
+    for (const name of [
+      "scrape_google",
+      "scrape_google_news",
+      "scrape_google_ai_mode",
+    ]) {
+      const tool = tools.find((t) => t.name === name)!;
+      expect(Object.keys(tool.inputSchema.properties ?? {})).toEqual(
+        expect.arrayContaining(["hl", "gl", "country"]),
+      );
+      // `country` is the deprecated alias for `gl`, so neither is required on
+      // its own — the schema's cross-field rule enforces that one is present.
+      expect(tool.inputSchema.required ?? []).not.toContain("country");
+      expect(tool.inputSchema.required ?? []).not.toContain("gl");
+    }
+  });
+
   it("keeps scrape_google's fields optional for query/url dual mode", () => {
     const tool = tools.find((t) => t.name === "scrape_google")!;
     expect(tool.inputSchema.required ?? []).toEqual([]);
   });
 
-  it("hides include.rawHtml from scrape_google but keeps public flags", () => {
+  it("advertises scrape_google's public include flags", () => {
     const tool = tools.find((t) => t.name === "scrape_google")!;
     const includeProps = tool.inputSchema.properties?.include?.properties;
     expect(includeProps).toBeDefined();
-    expect(Object.keys(includeProps!)).not.toContain("rawHtml");
     expect(Object.keys(includeProps!)).toEqual(
       expect.arrayContaining(["html", "aioverview", "paaAioverview"]),
     );
@@ -219,5 +234,4 @@ describe("cloro MCP server", () => {
       "INSUFFICIENT_CREDITS",
     );
   });
-
 });

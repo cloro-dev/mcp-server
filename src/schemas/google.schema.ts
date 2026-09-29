@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createCountrySchema } from "./country.schema";
+import { geoFields, refineGeo, normalizeGeo, applyGeo } from "./geo.schema";
 import { googleDeviceSchema } from "./device.schema";
 import { ALL_COUNTRY_CODES } from "./all-countries";
 import { parseGoogleSearchUrl } from "./google-url";
@@ -39,9 +39,11 @@ export const googleSchema = z
     // A complete google.com/search URL. Cloro forwards it as the fetch target
     // instead of assembling one from the structured fields.
     url: z.string().trim().optional(),
-    // Optional only because `url` mode can derive it from the URL's `gl`.
-    // Structured mode still requires it — enforced below.
-    country: createCountrySchema(GOOGLE_AVAILABLE_COUNTRIES, []).optional(),
+    // `hl` / `gl` are the caller-facing geo contract; `country` is the
+    // deprecated alias normalized into `gl`. All three are optional at the
+    // field level because `url` mode can derive geo from the URL's `gl` —
+    // presence is enforced per-mode below.
+    ...geoFields(GOOGLE_AVAILABLE_COUNTRIES),
     location: z.string().trim().optional(),
     uule: z.string().trim().optional(),
     device: googleDeviceSchema,
@@ -52,8 +54,6 @@ export const googleSchema = z
     include: z
       .object({
         html: z.boolean(),
-        // undocumented; inlines raw HTML into `html` when combined with include.html
-        rawHtml: z.boolean(),
         aioverview: z.union([
           z.boolean(),
           z
@@ -84,6 +84,10 @@ export const googleSchema = z
     path: ["uule"],
   })
   .superRefine((data, ctx) => {
+    // Conflict between the two geo channels is always an error, in either
+    // mode. Presence is mode-specific, so it is enforced below instead.
+    refineGeo(data, ctx, { requirePresence: false });
+
     if (!data.query && !data.url) {
       ctx.addIssue({
         code: "custom",
@@ -95,11 +99,11 @@ export const googleSchema = z
 
     if (!data.url) {
       // Structured mode has no URL to derive geo from.
-      if (!data.country) {
+      if (!data.country && !data.gl) {
         ctx.addIssue({
           code: "custom",
-          message: "Invalid input: expected string, received undefined",
-          path: ["country"],
+          message: "Provide gl (or country, which is deprecated)",
+          path: ["gl"],
         });
       }
       return;
@@ -144,17 +148,35 @@ export const googleSchema = z
       return;
     }
 
-    // `country` selects the proxy and session, so it must resolve to something
-    // we support. The URL's `gl` stands in when the caller omits it — they have
-    // already stated the geo once and should not have to repeat it.
-    if (data.country) return;
+    // `hl` / `gl` (or the deprecated `country`) next to a URL that carries its
+    // own copy is two channels for one fact, like the URL-owned fields above.
+    // An agreeing pair is the transform output round-tripping and is accepted.
+    if (data.hl && parsed.language && data.hl !== parsed.language) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Cannot set both url and hl; the URL owns this value",
+        path: ["hl"],
+      });
+    }
+
+    const explicitGl = (data.gl ?? data.country)?.toUpperCase();
+    if (explicitGl) {
+      if (parsed.country && parsed.country !== explicitGl) {
+        const field = data.gl ? "gl" : "country";
+        ctx.addIssue({
+          code: "custom",
+          message: `Cannot set both url and ${field}; the URL owns this value`,
+          path: [field],
+        });
+      }
+      return;
+    }
 
     if (!parsed.country) {
       ctx.addIssue({
         code: "custom",
-        message:
-          "Provide country, or include gl= in the url so it can be derived",
-        path: ["country"],
+        message: "Provide gl, or include gl= in the url so it can be derived",
+        path: ["gl"],
       });
       return;
     }
@@ -162,8 +184,8 @@ export const googleSchema = z
     if (!GOOGLE_AVAILABLE_COUNTRIES.includes(parsed.country)) {
       ctx.addIssue({
         code: "custom",
-        message: `Derived country "${parsed.country}" from the url's gl is not supported; pass a supported country explicitly`,
-        path: ["country"],
+        message: `Derived country "${parsed.country}" from the url's gl is not supported; pass a supported gl explicitly`,
+        path: ["gl"],
       });
     }
   })
@@ -175,10 +197,8 @@ export const googleSchema = z
     // set so the inferred output type stays a single object, not a union.
     if (!parsed?.ok) {
       return {
-        ...data,
-        // Guaranteed present in structured mode by the refinement above.
-        country: data.country as string,
-        language: undefined as string | undefined,
+        // Geo presence is guaranteed in structured mode by the refinement above.
+        ...applyGeo(data),
         pages: data.pages ?? DEFAULT_PAGES,
         startOffset: undefined as number | undefined,
         tbs: undefined as string | undefined,
@@ -188,16 +208,23 @@ export const googleSchema = z
 
     // Decompose the URL into the fields the worker already consumes, so `url`
     // mode needs no special handling downstream: `q` becomes the prompt, `gl`
-    // the country, `hl` the language override, `uule` the location, and `tbs` /
-    // `safe` ride along as their own keys.
+    // and `hl` the geo pair, `uule` the location, and `tbs` / `safe` ride along
+    // as their own keys. Explicit `hl` / `gl` either agree with the URL's
+    // copies (enforced above) or fill in when the URL has none.
     //
     // `pages` / `startOffset` are the pagination authority — `num` is capped at
     // 10 by Google, so depth is fulfilled by paginating `start` instead.
+    const geo = normalizeGeo({
+      gl: data.gl ?? data.country ?? (parsed.country as string),
+      hl: data.hl ?? parsed.language ?? undefined,
+    })!;
+
     return {
       ...data,
       query: parsed.query,
-      country: data.country ?? (parsed.country as string),
-      language: parsed.language ?? undefined,
+      country: geo.country,
+      gl: geo.gl,
+      hl: geo.hl,
       uule: parsed.uule ?? undefined,
       pages: parsed.pages,
       startOffset: parsed.startOffset as number | undefined,
