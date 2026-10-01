@@ -1,0 +1,107 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "app-6a79c1f807408191a2d52ae296b8262c",
+  "version": "0.2.2",
+  "description": "See how AI answer engines and search engines answer a prompt from a chosen country, with the sources they cite.",
+  "author": {
+    "name": "cloro",
+    "email": "info@cloro.dev",
+    "url": "https://cloro.dev"
+  },
+  "homepage": "https://cloro.dev/integrations/mcp/",
+  "repository": "https://github.com/cloro-dev/mcp-server",
+  "license": "MIT",
+  "keywords": [
+    "ai-search",
+    "geo",
+    "serp",
+    "brand-monitoring",
+    "seo"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "cloro",
+        "shortDescription": "AI search answers by country",
+        "longDescription": "cloro shows what AI answer engines and search engines tell a user in a given country. Ask a question in the conversation, and cloro runs the prompt on the engine you choose, from the country you choose, then returns the parsed answer and the sources it cited.\n\nUse it to check whether an engine recommends your brand, to compare which sources different engines cite for the same prompt, or to see if a search results page shows an AI-generated summary for a query in a given market. Search results can be targeted by city, and answer engines by US state.\n\nWho it is for: marketing, SEO and GEO (generative engine optimization) teams that track brand visibility in AI answers.\n\nLimits: each call runs one live request and waits for the answer, so use the cloro API directly for large batches. Some engines are sometimes unavailable. cloro reads public answers only. It does not post, change or delete anything, and it does not access any personal account on these engines. The supported engines are listed at https://cloro.dev/docs.",
+        "developerName": "cloro",
+        "category": "Data & Analytics",
+        "capabilities": [
+          "Get answers from AI answer engines with their cited sources",
+          "Run web searches and read the AI-generated summary",
+          "Get news search results",
+          "Target a country, a US state or a city",
+          "List supported countries and states"
+        ],
+        "websiteURL": "https://cloro.dev",
+        "supportURL": "https://cloro.dev/contact/",
+        "privacyPolicyURL": "https://cloro.dev/privacy/",
+        "termsOfServiceURL": "https://cloro.dev/terms/",
+        "defaultPrompt": [
+          "Which vendors do AI answer engines recommend for 'best SERP API' in the US?",
+          "Compare the sources two AI answer engines cite for 'best CRM for startups'.",
+          "Does the search results page for 'ai visibility tracking' show an AI summary in Germany?"
+        ],
+        "composerIcon": "./assets/logo.svg",
+        "logo": "./assets/logo.svg"
+      },
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Lists the countries cloro can geo-target for one engine",
+              "prompt": "Use cloro to list the countries I can geo-target when I monitor Grok.",
+              "tools_triggered": "list_countries",
+              "expected_behavior": "Returns a list of ISO 3166-1 alpha-2 country codes supported for Grok. No credits are charged."
+            },
+            {
+              "description": "Lists the US states available for state-level targeting",
+              "prompt": "Which US states can cloro target?",
+              "tools_triggered": "list_states",
+              "expected_behavior": "Returns the 51 US state codes and names (50 states and DC). No credits are charged."
+            },
+            {
+              "description": "Shows how ChatGPT answers a prompt and which sources it cites",
+              "prompt": "With cloro, check how ChatGPT answers \"best CRM for startups\" for a user in the United States, and list the sources it cites.",
+              "tools_triggered": "scrape_chatgpt",
+              "expected_behavior": "Returns ChatGPT's answer text and the cited sources with their URLs, plus the credits charged."
+            },
+            {
+              "description": "Gets Google organic results for a query in one country",
+              "prompt": "Use cloro to get Google's top organic results for \"project management software\" in the United Kingdom.",
+              "tools_triggered": "scrape_google",
+              "expected_behavior": "Returns the organic results in rank order with title, link and snippet, plus the credits charged."
+            },
+            {
+              "description": "Shows the Google AI Mode answer and the brands it mentions",
+              "prompt": "Using cloro, what does Google AI Mode say about \"best running shoes for flat feet\" for a user in Germany? Which brands does it mention?",
+              "tools_triggered": "scrape_google_ai_mode",
+              "expected_behavior": "Returns the AI Mode answer with its cited sources, and lists the brands named in the answer."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Creative writing has no relation to AI search monitoring, so the app must not act. ChatGPT writes the haiku itself.",
+              "prompt": "Write a haiku about autumn."
+            },
+            {
+              "description": "cloro tools are read-only and cannot post content to an engine. No tool is called, and ChatGPT says that cloro only reads answers and search results.",
+              "prompt": "Use cloro to post a 5-star review of my product on Google."
+            },
+            {
+              "description": "A general fact question does not need a scrape, which charges credits. No tool is called, and ChatGPT answers with its own tools.",
+              "prompt": "What is the weather in Lisbon right now?"
+            }
+          ]
+        },
+        "demo_recording_url": "https://youtu.be/jdqfr22txeo",
+        "commerce": false,
+        "commerce_description": "The plugin does not sell products or process payments."
+      },
+      "publication": {
+        "countries": [],
+        "release_notes": "First release. Ten read-only tools: answers with cited sources from AI answer engines, web search with the AI-generated summary, news search, and lists of supported countries and states. Sign-in is OAuth 2.1."
+      }
+    }
+  }
+}

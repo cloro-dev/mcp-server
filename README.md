@@ -41,6 +41,25 @@ This repo is also a Cursor plugin. Install it from the Cursor marketplace, or po
 
 Cursor stores the key on its side and sends it as `Authorization: Bearer`, so the key stays out of the URL and out of the repo. The manifest is `.cursor-plugin/plugin.json` and the server definition is `mcp.json`.
 
+### In ChatGPT
+
+`openai-plugin/` is the package for the OpenAI plugin directory. It has three parts:
+
+- `plugin.json`: the listing, the review test cases, the demo video URL and the release notes.
+- `mcp.json`: the hosted server URL.
+- `assets/`: the logo.
+
+ChatGPT users sign in with OAuth, the same as in Claude.
+
+To publish a new version, change `version` in `openai-plugin/plugin.json` and `publication.release_notes`. Then build the ZIP from inside the folder, so that `plugin.json` is at the ZIP root:
+
+```bash
+cd openai-plugin
+zip -X -r ../cloro-openai-plugin.zip plugin.json mcp.json assets/
+```
+
+Upload the ZIP at [platform.openai.com/plugins](https://platform.openai.com/plugins). The dashboard reads the review information from the ZIP. Reviewer credentials go in the dashboard only, never in the ZIP. The hosted server proves domain ownership at `/.well-known/openai-apps-challenge`.
+
 ### Running it yourself
 
 ```bash
