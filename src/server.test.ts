@@ -2,6 +2,13 @@ import { readFileSync } from "node:fs";
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import {
+  ALL_COUNTRY_CODES,
+  availableStates,
+  COUNTRY_MODELS,
+  MODEL_COUNTRIES,
+  STATE_COUNTRIES,
+} from "./schemas";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { buildServer } from "./server";
@@ -40,7 +47,9 @@ describe("cloro MCP server", () => {
     name: string;
     title?: string;
     inputSchema: ToolSchema;
+    outputSchema?: ToolSchema;
     annotations?: ToolAnnotations;
+    _meta?: { securitySchemes?: unknown };
   }>;
 
   beforeAll(async () => {
@@ -79,6 +88,23 @@ describe("cloro MCP server", () => {
       expect(tool.annotations?.idempotentHint, tool.name).toBe(
         isScrape ? undefined : true,
       );
+    }
+  });
+
+  it("declares OAuth securitySchemes on every tool", () => {
+    for (const tool of tools) {
+      expect(tool._meta?.securitySchemes, tool.name).toEqual([
+        { type: "oauth2", scopes: ["profile", "email", "user:org:read"] },
+      ]);
+    }
+  });
+
+  // A declared outputSchema makes the SDK fail any call whose result does not
+  // conform, so only the tools with a fixed response shape declare one.
+  it("declares an outputSchema only on the reference tools", () => {
+    for (const tool of tools) {
+      const isScrape = tool.name.startsWith("scrape_");
+      expect(Boolean(tool.outputSchema), tool.name).toBe(!isScrape);
     }
   });
 
@@ -205,6 +231,52 @@ describe("cloro MCP server", () => {
     }
   });
 
+  // Feeds each tool the exact response the API sends for every input it
+  // accepts. The SDK checks structuredContent against the outputSchema on the
+  // server and again on the client, so a mismatch rejects the call.
+  it("returns reference results that conform to their outputSchema", async () => {
+    const cases = [
+      {
+        name: "list_countries",
+        args: {},
+        body: ALL_COUNTRY_CODES,
+        expected: { countries: ALL_COUNTRY_CODES },
+      },
+      ...COUNTRY_MODELS.map((model) => ({
+        name: "list_countries",
+        args: { model },
+        body: MODEL_COUNTRIES[model],
+        expected: { countries: MODEL_COUNTRIES[model] },
+      })),
+      ...STATE_COUNTRIES.map((country) => ({
+        name: "list_states",
+        args: { country },
+        body: availableStates(country),
+        expected: { states: availableStates(country) },
+      })),
+    ];
+
+    for (const { name, args, body, expected } of cases) {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(() =>
+          Promise.resolve(new Response(JSON.stringify(body), { status: 200 })),
+        ),
+      );
+
+      const result = (await client.callTool({
+        name,
+        arguments: args,
+      })) as CallToolResult;
+
+      expect(result.isError, `${name} ${JSON.stringify(args)}`).toBeFalsy();
+      expect(result.structuredContent).toEqual(expected);
+      expect(JSON.parse((result.content[0] as { text: string }).text)).toEqual(
+        expected,
+      );
+    }
+  });
+
   it("returns API errors as tool errors with the envelope details", async () => {
     vi.stubGlobal(
       "fetch",
@@ -234,4 +306,5 @@ describe("cloro MCP server", () => {
       "INSUFFICIENT_CREDITS",
     );
   });
+
 });
