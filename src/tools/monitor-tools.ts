@@ -10,7 +10,7 @@ import {
 } from "../schemas";
 import { z } from "zod";
 
-import { BASE_READ_ONLY_ANNOTATIONS } from "../lib/annotations";
+import { BASE_READ_ONLY_ANNOTATIONS, toolMeta } from "../lib/annotations";
 import { describeFields } from "../lib/describe-fields";
 import { observeToolCall } from "../lib/metrics";
 import { toolResult } from "../lib/tool-result";
@@ -209,6 +209,7 @@ export function registerMonitorTools(
         description: tool.description,
         inputSchema: tool.inputSchema,
         annotations: SCRAPE_ANNOTATIONS,
+        _meta: toolMeta(),
       },
       (args: Record<string, unknown>) =>
         observeToolCall(tool.name, async () => {

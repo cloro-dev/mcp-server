@@ -1,3 +1,5 @@
+import { oauth } from "../config";
+
 /**
  * Shared tool annotation base. Every cloro tool is read-only, so the two
  * variants in `tools/` extend this rather than restating it.
@@ -17,3 +19,14 @@ export const BASE_READ_ONLY_ANNOTATIONS = {
   readOnlyHint: true,
   destructiveHint: false,
 } as const;
+
+/**
+ * `securitySchemes` for ChatGPT's account-linking UI. It goes in `_meta`
+ * because the MCP SDK drops unknown top-level tool fields. No `noauth`: an
+ * anonymous call gets a 401. The scopes are those of the 401 challenge.
+ */
+export function toolMeta(): Record<string, unknown> {
+  return {
+    securitySchemes: [{ type: "oauth2", scopes: oauth.scopes }],
+  };
+}
