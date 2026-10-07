@@ -24,6 +24,8 @@ const STATE_DOC =
   'Optional state code for state-level targeting (e.g. "CA" when country is "US"). Only some countries support this — call list_states for the supported countries and their codes.';
 const INCLUDE_DOC =
   "Optional flags for heavier payload fields, each off by default: markdown (the answer rendered as markdown), html (the answer page HTML), rawResponse (the engine's unprocessed response payload). Leave unset for the leanest response.";
+const NEWS_INCLUDE_DOC =
+  "Optional flag, off by default: html (the result page HTML). Leave unset for the leanest response.";
 const CHATGPT_INCLUDE_DOC =
   "Optional flags for heavier payload fields, each off by default: markdown (the answer rendered as markdown), html (the answer page HTML), rawResponse (the engine's unprocessed response payload), searchQueries (the web searches ChatGPT issued while answering), ads and shopping (sponsored and product results; these render only on the desktop UI, so pair them with legacy: true). Leave unset for the leanest response.";
 const CHATGPT_LEGACY_DOC =
@@ -192,7 +194,7 @@ const MONITOR_TOOLS: MonitorTool[] = [
       hl: HL_DOC,
       device: GOOGLE_DEVICE_DOC,
       pages: PAGES_DOC,
-      include: INCLUDE_DOC,
+      include: NEWS_INCLUDE_DOC,
     }),
   },
 ];
