@@ -1,7 +1,7 @@
 {
   "name": "@cloro/mcp-server",
   "version": "0.3.0",
-  "description": "MCP server for the cloro API. Query ChatGPT, Perplexity, Gemini, Copilot, Google AI Mode, Google Search and Google News as agent tools.",
+  "description": "MCP server for the cloro API. Query ChatGPT, Perplexity, Gemini, Copilot, Grok, Google AI Mode, Google Search and Google News as agent tools.",
   "license": "MIT",
   "type": "module",
   "bin": { "cloro-mcp": "dist/index.js" },

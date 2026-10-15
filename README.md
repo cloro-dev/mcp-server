@@ -1,6 +1,6 @@
 # cloro MCP Server
 
-The source of the [cloro MCP server](https://cloro.dev/docs/integrations/mcp), which gives any MCP-capable agent tools for querying ChatGPT, Perplexity, Gemini, Copilot, Google AI Mode, Google Search and Google News. Ask your agent *"check whether ChatGPT recommends us for best SERP API"* and it calls the cloro API and reasons over the parsed answer and its cited sources.
+The source of the [cloro MCP server](https://cloro.dev/docs/integrations/mcp), which gives any MCP-capable agent tools for querying ChatGPT, Perplexity, Gemini, Copilot, Grok, Google AI Mode, Google Search and Google News. Ask your agent *"check whether ChatGPT recommends us for best SERP API"* and it calls the cloro API and reasons over the parsed answer and its cited sources.
 
 Runs hosted at `mcp.cloro.dev`, or locally over stdio.
 
@@ -61,6 +61,7 @@ OAuth is off unless you set `CLERK_ISSUER`. The hosted server sets it to `https:
 | `scrape_gemini` | [`POST /v1/monitor/gemini`](https://cloro.dev/docs/api-reference/endpoint/monitor-gemini) |
 | `scrape_copilot` | [`POST /v1/monitor/copilot`](https://cloro.dev/docs/api-reference/endpoint/monitor-copilot) |
 | `scrape_perplexity` | [`POST /v1/monitor/perplexity`](https://cloro.dev/docs/api-reference/endpoint/monitor-perplexity) |
+| `scrape_grok` | [`POST /v1/monitor/grok`](https://cloro.dev/docs/api-reference/endpoint/monitor-grok) |
 | `scrape_google_ai_mode` | [`POST /v1/monitor/aimode`](https://cloro.dev/docs/api-reference/endpoint/monitor-aimode) |
 | `scrape_google` | [`POST /v1/monitor/google`](https://cloro.dev/docs/api-reference/endpoint/monitor-google) |
 | `scrape_google_news` | [`POST /v1/monitor/google/news`](https://cloro.dev/docs/api-reference/endpoint/monitor-google-news) |
@@ -68,6 +69,8 @@ OAuth is off unless you set `CLERK_ISSUER`. The hosted server sets it to `https:
 | `list_states` | [`GET /v1/states`](https://cloro.dev/docs/api-reference/endpoint/states) |
 
 The assistant tools take a `prompt` and a `country` (ISO 3166-1 alpha-2), plus an optional `state` for US state-level targeting. The Google tools take `gl` for the result geography and an optional `hl` for the interface language; `country` still works as a deprecated alias for `gl`. `scrape_google_ai_mode` targets sub-country with `location` or `uule` rather than `state`. `scrape_google` runs either from a `query` plus `gl`, or from a complete `google.com/search` URL that carries the query and pagination itself, and accepts `include.aioverview` for Google's AI Overview. Every tool takes an optional `include` object for heavier payload fields; leave it unset for the leanest response.
+
+`scrape_grok` is registered, but Grok is discontinued: grok.com shows a sign-up wall to logged-out visitors. The cloro API rejects its calls with a `400` (`MODEL_UNAVAILABLE`), and these calls cost no credits.
 
 ## How it works
 

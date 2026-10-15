@@ -5,6 +5,7 @@ import {
   geminiSchema,
   googleNewsSchema,
   googleSchema,
+  grokSchema,
   perplexitySchema,
 } from "../schemas";
 import { z } from "zod";
@@ -125,6 +126,13 @@ const MONITOR_TOOLS: MonitorTool[] = [
     title: "Scrape Perplexity",
     engine: "Perplexity",
     shape: perplexitySchema.shape,
+  }),
+  promptEngineTool({
+    name: "scrape_grok",
+    path: "/v1/monitor/grok",
+    title: "Scrape Grok",
+    engine: "Grok (xAI)",
+    shape: grokSchema.shape,
   }),
   {
     name: "scrape_google_ai_mode",

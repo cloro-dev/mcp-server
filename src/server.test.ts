@@ -20,6 +20,7 @@ const EXPECTED_TOOLS = [
   "scrape_gemini",
   "scrape_copilot",
   "scrape_perplexity",
+  "scrape_grok",
   "scrape_google_ai_mode",
   "scrape_google",
   "scrape_google_news",
@@ -123,6 +124,7 @@ describe("cloro MCP server", () => {
       "scrape_gemini",
       "scrape_copilot",
       "scrape_perplexity",
+      "scrape_grok",
     ]) {
       const tool = tools.find((t) => t.name === name)!;
       expect(tool.inputSchema.required).toEqual(
@@ -207,8 +209,8 @@ describe("cloro MCP server", () => {
       { name: "list_countries", args: {}, expected: "/v1/countries" },
       {
         name: "list_countries",
-        args: { model: "chatgpt" },
-        expected: "/v1/countries?model=chatgpt",
+        args: { model: "grok" },
+        expected: "/v1/countries?model=grok",
       },
     ];
 
