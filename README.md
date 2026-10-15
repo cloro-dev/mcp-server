@@ -69,8 +69,6 @@ OAuth is off unless you set `CLERK_ISSUER`. The hosted server sets it to `https:
 
 The assistant tools take a `prompt` and a `country` (ISO 3166-1 alpha-2), plus an optional `state` for US state-level targeting. The Google tools take `gl` for the result geography and an optional `hl` for the interface language; `country` still works as a deprecated alias for `gl`. `scrape_google_ai_mode` targets sub-country with `location` or `uule` rather than `state`. `scrape_google` runs either from a `query` plus `gl`, or from a complete `google.com/search` URL that carries the query and pagination itself, and accepts `include.aioverview` for Google's AI Overview. Every tool takes an optional `include` object for heavier payload fields; leave it unset for the leanest response.
 
-`scrape_perplexity` is registered, but Perplexity is temporarily unavailable. The cloro API rejects requests to it with a `400` (`MODEL_UNAVAILABLE`). These requests cost no credits. The [changelog](https://cloro.dev/docs/changelog) will say when it is back.
-
 ## How it works
 
 The server holds no business logic and no secrets. Each request forwards the caller's own credential, an API key or an OAuth access token, to `api.cloro.dev` as a Bearer token, so authentication, credit billing, rate limiting and concurrency are all enforced by the API rather than here. In http mode every POST builds a fresh server and transport bound to that caller's credential, which is why one deployment serves everyone with no session state.
