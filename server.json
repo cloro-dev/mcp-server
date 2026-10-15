@@ -3,7 +3,7 @@
   "name": "dev.cloro/cloro",
   "title": "cloro",
   "description": "Scrape AI answer engines and Google Search/News with country and state-level geo-targeting.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "websiteUrl": "https://cloro.dev/docs/integrations/mcp",
   "repository": {
     "url": "https://github.com/cloro-dev/mcp-server",

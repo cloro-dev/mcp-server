@@ -14,7 +14,6 @@ export * from "./copilot.schema";
 export * from "./gemini.schema";
 export * from "./google.schema";
 export * from "./google-news.schema";
-export * from "./grok.schema";
 export * from "./perplexity.schema";
 export * from "./country.schema";
 export * from "./device.schema";

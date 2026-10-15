@@ -27,7 +27,7 @@ jobs:
         run: npm run build
 
       # The build is only useful if the server still speaks MCP. Run a real
-      # initialize + tools/list handshake over stdio and assert the ten tools
+      # initialize + tools/list handshake over stdio and assert the nine tools
       # are registered, so a broken tool module fails here rather than in a
       # client.
       - name: Smoke test the MCP handshake
@@ -48,8 +48,8 @@ jobs:
                   .find((m) => m.id === 2)?.result?.tools;
                 if (!tools) throw new Error("no tools/list response");
                 console.log(`${tools.length} tools: ${tools.map((t) => t.name).join(", ")}`);
-                if (tools.length !== 10) {
-                  throw new Error(`expected 10 tools, got ${tools.length}`);
+                if (tools.length !== 9) {
+                  throw new Error(`expected 9 tools, got ${tools.length}`);
                 }
               });
             '

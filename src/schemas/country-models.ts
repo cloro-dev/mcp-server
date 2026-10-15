@@ -4,7 +4,6 @@ import { CHATGPT_AVAILABLE_COUNTRIES } from "./chatgpt.schema";
 import { COPILOT_AVAILABLE_COUNTRIES } from "./copilot.schema";
 import { GEMINI_AVAILABLE_COUNTRIES } from "./gemini.schema";
 import { GOOGLE_AVAILABLE_COUNTRIES } from "./google.schema";
-import { GROK_AVAILABLE_COUNTRIES } from "./grok.schema";
 import { PERPLEXITY_AVAILABLE_COUNTRIES } from "./perplexity.schema";
 
 /**
@@ -19,7 +18,6 @@ export const COUNTRY_MODELS = [
   "copilot",
   "gemini",
   "google",
-  "grok",
   "perplexity",
 ] as const;
 
@@ -32,6 +30,5 @@ export const MODEL_COUNTRIES: Record<CountryModel, string[]> = {
   copilot: COPILOT_AVAILABLE_COUNTRIES,
   gemini: GEMINI_AVAILABLE_COUNTRIES,
   google: GOOGLE_AVAILABLE_COUNTRIES,
-  grok: GROK_AVAILABLE_COUNTRIES,
   perplexity: PERPLEXITY_AVAILABLE_COUNTRIES,
 };
