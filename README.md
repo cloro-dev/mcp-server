@@ -1,6 +1,6 @@
 # cloro MCP Server
 
-The source of the [cloro MCP server](https://cloro.dev/docs/integrations/mcp), which gives any MCP-capable agent tools for querying ChatGPT, Perplexity, Gemini, Copilot, Grok, Google AI Mode, Google Search and Google News. Ask your agent *"check whether ChatGPT recommends us for best SERP API"* and it calls the cloro API and reasons over the parsed answer and its cited sources.
+The source of the [cloro MCP server](https://cloro.dev/docs/integrations/mcp), which gives any MCP-capable agent tools for querying ChatGPT, Perplexity, Gemini, Copilot, Google AI Mode, Google Search and Google News. Ask your agent *"check whether ChatGPT recommends us for best SERP API"* and it calls the cloro API and reasons over the parsed answer and its cited sources.
 
 Runs hosted at `mcp.cloro.dev`, or locally over stdio.
 
@@ -61,16 +61,18 @@ OAuth is off unless you set `CLERK_ISSUER`. The hosted server sets it to `https:
 | `scrape_gemini` | [`POST /v1/monitor/gemini`](https://cloro.dev/docs/api-reference/endpoint/monitor-gemini) |
 | `scrape_copilot` | [`POST /v1/monitor/copilot`](https://cloro.dev/docs/api-reference/endpoint/monitor-copilot) |
 | `scrape_perplexity` | [`POST /v1/monitor/perplexity`](https://cloro.dev/docs/api-reference/endpoint/monitor-perplexity) |
-| `scrape_grok` | [`POST /v1/monitor/grok`](https://cloro.dev/docs/api-reference/endpoint/monitor-grok) |
 | `scrape_google_ai_mode` | [`POST /v1/monitor/aimode`](https://cloro.dev/docs/api-reference/endpoint/monitor-aimode) |
 | `scrape_google` | [`POST /v1/monitor/google`](https://cloro.dev/docs/api-reference/endpoint/monitor-google) |
 | `scrape_google_news` | [`POST /v1/monitor/google/news`](https://cloro.dev/docs/api-reference/endpoint/monitor-google-news) |
+| `resolve_google_redirect` | [`POST /v1/monitor/google/goto`](https://cloro.dev/docs/api-reference/endpoint/google/resolve-goto) |
 | `list_countries` | [`GET /v1/countries`](https://cloro.dev/docs/api-reference/endpoint/countries) |
 | `list_states` | [`GET /v1/states`](https://cloro.dev/docs/api-reference/endpoint/states) |
 
 The assistant tools take a `prompt` and a `country` (ISO 3166-1 alpha-2), plus an optional `state` for US state-level targeting. The Google tools take `gl` for the result geography and an optional `hl` for the interface language; `country` still works as a deprecated alias for `gl`. `scrape_google_ai_mode` targets sub-country with `location` or `uule` rather than `state`. `scrape_google` runs either from a `query` plus `gl`, or from a complete `google.com/search` URL that carries the query and pagination itself, and accepts `include.aioverview` for Google's AI Overview. Every tool takes an optional `include` object for heavier payload fields; leave it unset for the leanest response.
 
-`scrape_grok` is registered, but Grok is discontinued: grok.com shows a sign-up wall to logged-out visitors. The cloro API rejects its calls with a `400` (`MODEL_UNAVAILABLE`), and these calls cost no credits.
+A Google result `link` can come back empty, or as a `google.com/goto` URL, with a `redirectLink` beside it. Pass the `redirectLink` to `resolve_google_redirect` to get the destination.
+
+There is no Grok tool. Grok is discontinued: grok.com shows a sign-up wall to logged-out visitors, and the cloro API rejects Grok calls with a `400` (`MODEL_UNAVAILABLE`).
 
 ## How it works
 
@@ -88,7 +90,7 @@ No. `mcp.cloro.dev` is hosted and is the path most people should take. This repo
 
 ### Does it cost credits?
 
-The scrape tools call billable endpoints, so yes, at the same rate as the API. `list_countries` and `list_states` read fixed reference lists and charge nothing. See [pricing](https://cloro.dev/pricing/).
+Yes. The scrape tools call the sync API, so each call costs the API rate plus a 2-credit sync surcharge. For example, a ChatGPT call costs 7 credits (5 + 2). Each tool description states its cost, and each result returns the credits charged and remaining. `resolve_google_redirect` costs 1 credit, with no surcharge. `list_countries` and `list_states` read fixed reference lists and charge nothing. See [pricing](https://cloro.dev/pricing/).
 
 ### Why is my API key in the URL?
 

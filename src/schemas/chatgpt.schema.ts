@@ -19,12 +19,26 @@ export const CHATGPT_AVAILABLE_COUNTRIES = getAvailableCountries(
   CHATGPT_BLOCKED_COUNTRIES,
 );
 
+export const CHATGPT_MAX_PROMPTS = 5;
+
+const promptSchema = z
+  .string("Prompt cannot be empty")
+  .min(1, "Prompt cannot be empty")
+  .max(10_000, "Prompt is too long (max 10,000 characters)")
+  .trim();
+
 export const chatgptSchema = withState({
-  prompt: z
-    .string("Prompt cannot be empty")
-    .min(1, "Prompt cannot be empty")
-    .max(10_000, "Prompt is too long (max 10,000 characters)")
-    .trim(),
+  // An array asks each prompt as a follow-up in the same conversation.
+  prompt: z.union([
+    promptSchema,
+    z
+      .array(promptSchema)
+      .min(1, "Prompt cannot be empty")
+      .max(
+        CHATGPT_MAX_PROMPTS,
+        `Too many prompts (max ${CHATGPT_MAX_PROMPTS})`,
+      ),
+  ]),
   country: createCountrySchema(ALL_COUNTRY_CODES, CHATGPT_BLOCKED_COUNTRIES),
   include: z
     .object({
@@ -34,12 +48,13 @@ export const chatgptSchema = withState({
       html: z.boolean(),
       ads: z.boolean(),
       shopping: z.boolean(),
+      // Requires shopping to be enabled.
+      productDetails: z.boolean(),
     })
     .partial()
     .optional(),
-  // Serve ChatGPT's legacy (desktop) UI instead of the default mobile-web UI.
-  // The desktop UI is where ads/shopping render, so callers that need them pass
-  // this. Defaults to the mobile-web UI when unset.
+  // Serve ChatGPT's legacy (desktop) UI instead of the default mobile-web UI,
+  // which is used when unset.
   legacy: z.boolean().optional(),
   disableWebSearch: z.boolean().optional(),
 });

@@ -20,10 +20,10 @@ const EXPECTED_TOOLS = [
   "scrape_gemini",
   "scrape_copilot",
   "scrape_perplexity",
-  "scrape_grok",
   "scrape_google_ai_mode",
   "scrape_google",
   "scrape_google_news",
+  "resolve_google_redirect",
   "list_countries",
   "list_states",
 ];
@@ -81,12 +81,12 @@ describe("cloro MCP server", () => {
       expect(tool.title, tool.name).toBeTruthy();
       expect(tool.annotations?.readOnlyHint, tool.name).toBe(true);
       expect(tool.annotations?.destructiveHint, tool.name).toBe(false);
-      // Scrapes hit live external engines and re-charge on every call;
-      // reference lookups read fixed lists and are free to repeat.
-      const isScrape = tool.name.startsWith("scrape_");
-      expect(tool.annotations?.openWorldHint, tool.name).toBe(isScrape);
+      // Monitor tools hit live external engines and re-charge on every
+      // call; reference lookups read fixed lists and are free to repeat.
+      const isReference = tool.name.startsWith("list_");
+      expect(tool.annotations?.openWorldHint, tool.name).toBe(!isReference);
       expect(tool.annotations?.idempotentHint, tool.name).toBe(
-        isScrape ? undefined : true,
+        isReference ? true : undefined,
       );
     }
   });
@@ -103,8 +103,8 @@ describe("cloro MCP server", () => {
   // conform, so only the tools with a fixed response shape declare one.
   it("declares an outputSchema only on the reference tools", () => {
     for (const tool of tools) {
-      const isScrape = tool.name.startsWith("scrape_");
-      expect(Boolean(tool.outputSchema), tool.name).toBe(!isScrape);
+      const isReference = tool.name.startsWith("list_");
+      expect(Boolean(tool.outputSchema), tool.name).toBe(isReference);
     }
   });
 
@@ -124,7 +124,6 @@ describe("cloro MCP server", () => {
       "scrape_gemini",
       "scrape_copilot",
       "scrape_perplexity",
-      "scrape_grok",
     ]) {
       const tool = tools.find((t) => t.name === name)!;
       expect(tool.inputSchema.required).toEqual(
@@ -209,8 +208,8 @@ describe("cloro MCP server", () => {
       { name: "list_countries", args: {}, expected: "/v1/countries" },
       {
         name: "list_countries",
-        args: { model: "grok" },
-        expected: "/v1/countries?model=grok",
+        args: { model: "gemini" },
+        expected: "/v1/countries?model=gemini",
       },
     ];
 
@@ -242,7 +241,7 @@ describe("cloro MCP server", () => {
         body: ALL_COUNTRY_CODES,
         expected: { countries: ALL_COUNTRY_CODES },
       },
-      ...COUNTRY_MODELS.map((model) => ({
+      ...COUNTRY_MODELS.filter((model) => model !== "grok").map((model) => ({
         name: "list_countries",
         args: { model },
         body: MODEL_COUNTRIES[model],
@@ -277,6 +276,56 @@ describe("cloro MCP server", () => {
     }
   });
 
+  it("does not offer grok to list_countries", async () => {
+    const result = (await client.callTool({
+      name: "list_countries",
+      arguments: { model: "grok" },
+    })) as CallToolResult;
+    expect(result.isError).toBe(true);
+  });
+
+  it("states the credit cost in every monitor tool description", async () => {
+    const { tools: listed } = await client.listTools();
+    for (const tool of listed) {
+      if (tool.name.startsWith("list_")) continue;
+      expect(tool.description, tool.name).toMatch(/Costs \d+ credits?/);
+    }
+  });
+
+  it("resolves a redirect link through /v1/monitor/google/goto", async () => {
+    const mock = vi.fn(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ url: "https://example.com/" }), {
+          status: 200,
+          headers: { "X-Credits-Charged": "1", "X-Credits-Remaining": "99" },
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", mock);
+
+    const result = (await client.callTool({
+      name: "resolve_google_redirect",
+      arguments: { url: "https://www.google.com/goto?url=CAESaAHrOzAV" },
+    })) as CallToolResult;
+
+    const [url, init] = mock.mock.calls[0] as unknown as [URL, RequestInit];
+    expect(url.pathname).toBe("/v1/monitor/google/goto");
+    expect(JSON.parse(init.body as string)).toEqual({
+      url: "https://www.google.com/goto?url=CAESaAHrOzAV",
+    });
+    expect(JSON.parse((result.content[0] as { text: string }).text)).toEqual({
+      result: { url: "https://example.com/" },
+      credits: { charged: 1, remaining: 99 },
+    });
+  });
+
+  it("sends server instructions that cover costs, async and empty links", () => {
+    const instructions = client.getInstructions() ?? "";
+    expect(instructions).toContain("sync surcharge");
+    expect(instructions).toContain("/v1/async/task");
+    expect(instructions).toContain("resolve_google_redirect");
+  });
+
   it("returns API errors as tool errors with the envelope details", async () => {
     vi.stubGlobal(
       "fetch",
@@ -306,5 +355,4 @@ describe("cloro MCP server", () => {
       "INSUFFICIENT_CREDITS",
     );
   });
-
 });

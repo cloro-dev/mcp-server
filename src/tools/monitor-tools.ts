@@ -4,8 +4,8 @@ import {
   copilotSchema,
   geminiSchema,
   googleNewsSchema,
+  googleGotoSchema,
   googleSchema,
-  grokSchema,
   perplexitySchema,
 } from "../schemas";
 import { z } from "zod";
@@ -24,12 +24,18 @@ const STATE_DOC =
   'Optional state code for state-level targeting (e.g. "CA" when country is "US"). Only some countries support this — call list_states for the supported countries and their codes.';
 const INCLUDE_DOC =
   "Optional flags for heavier payload fields, each off by default: markdown (the answer rendered as markdown), html (the answer page HTML), rawResponse (the engine's unprocessed response payload). Leave unset for the leanest response.";
+const AIMODE_INCLUDE_DOC =
+  "Optional flags for heavier payload fields, each off by default: markdown (the answer rendered as markdown), html (the answer page HTML). Leave unset for the leanest response.";
 const NEWS_INCLUDE_DOC =
   "Optional flag, off by default: html (the result page HTML). Leave unset for the leanest response.";
 const CHATGPT_INCLUDE_DOC =
-  "Optional flags for heavier payload fields, each off by default: markdown (the answer rendered as markdown), html (the answer page HTML), rawResponse (the engine's unprocessed response payload), searchQueries (the web searches ChatGPT issued while answering), ads and shopping (sponsored and product results; these render only on the desktop UI, so pair them with legacy: true). Leave unset for the leanest response.";
+  "Optional flags for heavier payload fields, each off by default: markdown (the answer rendered as markdown), html (the answer page HTML), rawResponse (the engine's unprocessed response payload), searchQueries (the web searches ChatGPT issued while answering), ads and shopping (sponsored and product results; ChatGPT tends to serve ads on follow-up prompts, so pass prompt as an array to see them), productDetails (the What to know summary and reviews of each product; needs shopping, and has no effect without it). Leave unset for the leanest response.";
+const CHATGPT_PROMPT_DOC =
+  "The prompt to submit to ChatGPT, or an array of up to 5 prompts asked in order as follow-ups in the same conversation (1 extra credit per prompt after the first). An array returns an array of results, one per prompt.";
 const CHATGPT_LEGACY_DOC =
-  "Serve ChatGPT's desktop UI instead of the default mobile-web UI. Needed for include.ads and include.shopping, which only render on desktop. Defaults to false.";
+  "Serve ChatGPT's desktop UI instead of the default mobile-web UI. Defaults to false.";
+const CHATGPT_DISABLE_WEB_SEARCH_DOC =
+  "Stop cloro from forcing web search, to get the answer ChatGPT gives on its own. ChatGPT then searches only when it decides to, so expect empty sources, citationPills and searchQueries. Defaults to false (web search forced). Same cost.";
 
 const promptDoc = (engine: string) => `The prompt to submit to ${engine}.`;
 const QUERY_DOC = "The search query.";
@@ -51,6 +57,13 @@ const GOOGLE_DEVICE_DOC =
   "Device to emulate: desktop, mobile, ios (Safari on iPhone), or android (Chrome on Android). mobile is an alias for android. Defaults to desktop.";
 const PAGES_DOC = "Number of result pages to fetch (1-10). Defaults to 1.";
 
+// Costs from @repo/billing and guides/providers.mdx: update when prices change.
+const SYNC_SURCHARGE = 2;
+const costDoc = (base: number, addOns?: string) =>
+  ` Costs ${base + SYNC_SURCHARGE} credits (${base} base + ${SYNC_SURCHARGE} sync surcharge)${addOns ? `; ${addOns}` : ""}.`;
+const STATE_COST = "a state adds 2";
+const PAGES_COST = "each page after the first adds 2";
+
 interface MonitorTool {
   name: string;
   path: string;
@@ -59,7 +72,7 @@ interface MonitorTool {
   inputSchema: z.ZodRawShape;
 }
 
-// Every scrape tool reads from a live external engine, hence `openWorldHint`.
+// Every monitor tool reads from a live external engine, hence `openWorldHint`.
 // Not idempotent: each call re-scrapes and charges credits again.
 const SCRAPE_ANNOTATIONS = {
   ...BASE_READ_ONLY_ANNOTATIONS,
@@ -70,13 +83,14 @@ const SCRAPE_ANNOTATIONS = {
 // superRefine checks (state requires country "US", query/url exclusivity),
 // so those arrive as API validation errors rather than client-side ones.
 
-/** The five prompt-in/answer-out engines share everything but the engine name. */
+/** The four prompt-in/answer-out engines share everything but the engine name. */
 const promptEngineTool = (tool: {
   name: string;
   path: string;
   title: string;
   engine: string;
   shape: z.ZodRawShape;
+  cost: string;
   description?: string;
   extraDocs?: Record<string, string>;
 }): MonitorTool => ({
@@ -84,8 +98,9 @@ const promptEngineTool = (tool: {
   path: tool.path,
   title: tool.title,
   description:
-    tool.description ??
-    `Submit a prompt to ${tool.engine} from a chosen country (and optionally US state) and return the answer with cited sources. Use this to see how ${tool.engine} answers a prompt and which brands/sources it mentions.`,
+    (tool.description ??
+      `Submit a prompt to ${tool.engine} from a chosen country (and optionally US state) and return the answer with cited sources. Use this to see how ${tool.engine} answers a prompt and which brands/sources it mentions.`) +
+    tool.cost,
   inputSchema: describeFields(tool.shape, {
     prompt: promptDoc(tool.engine),
     country: COUNTRY_DOC,
@@ -104,7 +119,16 @@ const MONITOR_TOOLS: MonitorTool[] = [
     description:
       "Submit a prompt to ChatGPT from a chosen country (and optionally US state) and return the full answer: text, cited sources, and optionally markdown, search queries, shopping results, and ads. Use this to see how ChatGPT answers a prompt and which brands/sources it mentions.",
     shape: chatgptSchema.shape,
-    extraDocs: { include: CHATGPT_INCLUDE_DOC, legacy: CHATGPT_LEGACY_DOC },
+    cost: costDoc(
+      5,
+      `any of include.rawResponse, searchQueries, ads or shopping adds 2 once; include.productDetails adds 2 more; each prompt after the first adds 1; ${STATE_COST}`,
+    ),
+    extraDocs: {
+      prompt: CHATGPT_PROMPT_DOC,
+      include: CHATGPT_INCLUDE_DOC,
+      legacy: CHATGPT_LEGACY_DOC,
+      disableWebSearch: CHATGPT_DISABLE_WEB_SEARCH_DOC,
+    },
   }),
   promptEngineTool({
     name: "scrape_gemini",
@@ -112,6 +136,7 @@ const MONITOR_TOOLS: MonitorTool[] = [
     title: "Scrape Google Gemini",
     engine: "Google Gemini",
     shape: geminiSchema.shape,
+    cost: costDoc(4, STATE_COST),
   }),
   promptEngineTool({
     name: "scrape_copilot",
@@ -119,6 +144,7 @@ const MONITOR_TOOLS: MonitorTool[] = [
     title: "Scrape Microsoft Copilot",
     engine: "Microsoft Copilot",
     shape: copilotSchema.shape,
+    cost: costDoc(5, STATE_COST),
   }),
   promptEngineTool({
     name: "scrape_perplexity",
@@ -126,20 +152,15 @@ const MONITOR_TOOLS: MonitorTool[] = [
     title: "Scrape Perplexity",
     engine: "Perplexity",
     shape: perplexitySchema.shape,
-  }),
-  promptEngineTool({
-    name: "scrape_grok",
-    path: "/v1/monitor/grok",
-    title: "Scrape Grok",
-    engine: "Grok (xAI)",
-    shape: grokSchema.shape,
+    cost: costDoc(4, STATE_COST),
   }),
   {
     name: "scrape_google_ai_mode",
     path: "/v1/monitor/aimode",
     title: "Scrape Google AI Mode",
     description:
-      "Submit a prompt to Google AI Mode from a chosen country and return the AI answer with cited sources. Supports location or UULE targeting and desktop/mobile emulation.",
+      "Submit a prompt to Google AI Mode from a chosen country and return the AI answer with cited sources. Supports location or UULE targeting and desktop/mobile emulation." +
+      costDoc(4),
     // aimodeSchema is a ZodPipe (object -> transform) since geo
     // normalization; the tool advertises the pipe's input object.
     inputSchema: describeFields(aimodeSchema.in.shape, {
@@ -150,7 +171,7 @@ const MONITOR_TOOLS: MonitorTool[] = [
       location: LOCATION_DOC,
       uule: UULE_DOC,
       device: DEVICE_DOC,
-      include: INCLUDE_DOC,
+      include: AIMODE_INCLUDE_DOC,
     }),
   },
   {
@@ -158,7 +179,11 @@ const MONITOR_TOOLS: MonitorTool[] = [
     path: "/v1/monitor/google",
     title: "Scrape Google Search",
     description:
-      "Run a Google search from a chosen country and return organic results, with optional AI Overview extraction (include.aioverview) and People-Also-Ask AI answers (include.paaAioverview). Two modes: structured (query + country, with optional location/uule/pages) or url (a complete google.com/search URL that owns query, location, and pagination). Supports desktop, mobile, iOS, and Android emulation and multi-page results.",
+      "Run a Google search from a chosen country and return organic results, with optional AI Overview extraction (include.aioverview) and People-Also-Ask AI answers (include.paaAioverview). Two modes: structured (query + gl, with optional location/uule/pages) or url (a complete google.com/search URL that owns query, location, and pagination). Supports desktop, mobile, iOS, and Android emulation and multi-page results. A result link can come back empty with a redirectLink beside it; pass the redirectLink to resolve_google_redirect to get the destination." +
+      costDoc(
+        3,
+        `include.aioverview and/or include.paaAioverview add 2 once; ${PAGES_COST}`,
+      ),
     // googleSchema is a ZodPipe (object -> transform) since url-mode
     // decomposition (ENG-536); the tool advertises the pipe's input object.
     inputSchema: describeFields(googleSchema.in.shape, {
@@ -184,7 +209,8 @@ const MONITOR_TOOLS: MonitorTool[] = [
     path: "/v1/monitor/google/news",
     title: "Scrape Google News",
     description:
-      "Run a Google News search from a chosen country and return news results. Supports desktop, mobile, iOS, and Android emulation and multi-page results.",
+      "Run a Google News search from a chosen country and return news results. Supports desktop, mobile, iOS, and Android emulation and multi-page results." +
+      costDoc(3, PAGES_COST),
     // googleNewsSchema is a ZodPipe (object -> transform) since geo
     // normalization; the tool advertises the pipe's input object.
     inputSchema: describeFields(googleNewsSchema.in.shape, {
@@ -195,6 +221,16 @@ const MONITOR_TOOLS: MonitorTool[] = [
       device: GOOGLE_DEVICE_DOC,
       pages: PAGES_DOC,
       include: NEWS_INCLUDE_DOC,
+    }),
+  },
+  {
+    name: "resolve_google_redirect",
+    path: "/v1/monitor/google/goto",
+    title: "Resolve a Google redirect link",
+    description:
+      "Resolve one Google redirect link to its destination URL. Use it when a link or url field from scrape_google, scrape_google_news or scrape_google_ai_mode is empty, missing, or a google.com/goto URL: pass that result's redirectLink. Returns { url }. A link that does not resolve returns a 502; retry it later. Costs 1 credit, with no sync surcharge, and only when the destination is returned.",
+    inputSchema: describeFields(googleGotoSchema.shape, {
+      url: "The redirectLink value: an absolute https://www.google.com/goto?url=... or https://www.google.com/url?... link.",
     }),
   },
 ];
