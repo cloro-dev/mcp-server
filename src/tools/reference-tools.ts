@@ -40,8 +40,10 @@ export function registerReferenceTools(
       description:
         "List the ISO 3166-1 alpha-2 country codes supported for geo-targeting. Pass a model to get the codes available for that specific engine (some engines block certain countries).",
       inputSchema: {
+        // The API still accepts "grok"; MCP excludes it because cloro stopped Grok (MAR-401).
         model: z
           .enum(COUNTRY_MODELS)
+          .exclude(["grok"])
           .optional()
           .describe(
             "Optionally filter to countries supported by a specific engine.",
