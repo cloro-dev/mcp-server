@@ -100,10 +100,15 @@ Because several MCP clients cannot set custom headers. If yours can, use the `Au
 
 320 seconds. Sync scrapes can take up to five minutes server-side, so the client budget leaves headroom. For long-running batches use the [async task API](https://cloro.dev/docs/api-reference/endpoint/create-async-task) rather than MCP.
 
+### Are there agent skills for cloro?
+
+Yes. [cloro-dev/skills](https://github.com/cloro-dev/skills) has one skill per surface (ChatGPT, Perplexity, Copilot, Gemini, Google AI Mode, Google AI Overview, Google Search, Google News) and skills for SERP research, LLM answer monitoring and AI visibility tracking. Install them with `npx skills add cloro-dev/skills`. The skills tell the agent which tool or endpoint to call, what it costs, and how to read the result. They work with this server or with the REST API.
+
 ## Learn more
 
 - **Integration guide:** [cloro.dev/docs/integrations/mcp](https://cloro.dev/docs/integrations/mcp)
 - **API reference:** [cloro.dev/docs](https://cloro.dev/docs/api-reference/introduction)
+- **Agent skills:** [github.com/cloro-dev/skills](https://github.com/cloro-dev/skills)
 
 ## License
 
