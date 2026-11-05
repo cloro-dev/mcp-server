@@ -18,8 +18,6 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 const EXPECTED_TOOLS = [
   "scrape_chatgpt",
   "scrape_gemini",
-  "scrape_copilot",
-  "scrape_perplexity",
   "scrape_google_ai_mode",
   "scrape_google",
   "scrape_google_news",
@@ -119,12 +117,7 @@ describe("cloro MCP server", () => {
   });
 
   it("requires prompt and country on the prompt-engine tools", () => {
-    for (const name of [
-      "scrape_chatgpt",
-      "scrape_gemini",
-      "scrape_copilot",
-      "scrape_perplexity",
-    ]) {
+    for (const name of ["scrape_chatgpt", "scrape_gemini"]) {
       const tool = tools.find((t) => t.name === name)!;
       expect(tool.inputSchema.required).toEqual(
         expect.arrayContaining(["prompt", "country"]),
@@ -241,7 +234,9 @@ describe("cloro MCP server", () => {
         body: ALL_COUNTRY_CODES,
         expected: { countries: ALL_COUNTRY_CODES },
       },
-      ...COUNTRY_MODELS.filter((model) => model !== "grok").map((model) => ({
+      ...COUNTRY_MODELS.filter(
+        (model) => !["grok", "copilot", "perplexity"].includes(model),
+      ).map((model) => ({
         name: "list_countries",
         args: { model },
         body: MODEL_COUNTRIES[model],
@@ -276,12 +271,14 @@ describe("cloro MCP server", () => {
     }
   });
 
-  it("does not offer grok to list_countries", async () => {
-    const result = (await client.callTool({
-      name: "list_countries",
-      arguments: { model: "grok" },
-    })) as CallToolResult;
-    expect(result.isError).toBe(true);
+  it("does not offer grok, copilot or perplexity to list_countries", async () => {
+    for (const model of ["grok", "copilot", "perplexity"]) {
+      const result = (await client.callTool({
+        name: "list_countries",
+        arguments: { model },
+      })) as CallToolResult;
+      expect(result.isError, model).toBe(true);
+    }
   });
 
   it("states the credit cost in every monitor tool description", async () => {

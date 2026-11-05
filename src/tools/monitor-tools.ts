@@ -1,12 +1,10 @@
 import {
   aimodeSchema,
   chatgptSchema,
-  copilotSchema,
   geminiSchema,
   googleNewsSchema,
   googleGotoSchema,
   googleSchema,
-  perplexitySchema,
 } from "../schemas";
 import { z } from "zod";
 
@@ -136,22 +134,6 @@ const MONITOR_TOOLS: MonitorTool[] = [
     title: "Scrape Google Gemini",
     engine: "Google Gemini",
     shape: geminiSchema.shape,
-    cost: costDoc(4, STATE_COST),
-  }),
-  promptEngineTool({
-    name: "scrape_copilot",
-    path: "/v1/monitor/copilot",
-    title: "Scrape Microsoft Copilot",
-    engine: "Microsoft Copilot",
-    shape: copilotSchema.shape,
-    cost: costDoc(5, STATE_COST),
-  }),
-  promptEngineTool({
-    name: "scrape_perplexity",
-    path: "/v1/monitor/perplexity",
-    title: "Scrape Perplexity",
-    engine: "Perplexity",
-    shape: perplexitySchema.shape,
     cost: costDoc(4, STATE_COST),
   }),
   {

@@ -1,6 +1,6 @@
 # cloro MCP Server
 
-A [Model Context Protocol (MCP) server](https://cloro.dev/docs/integrations/mcp) for [cloro](https://cloro.dev), the LLM scraping API that includes a Google SERP API. It gives Claude, Codex, Cursor and any MCP client answers from ChatGPT, Perplexity, Gemini, Copilot, Google AI Mode and Google AI Overview, plus Google web search and Google News results. Ask your agent *"compare Google's top results for best LLM scraping API with ChatGPT's answer"* and it calls cloro and reasons over the parsed results and cited sources.
+A [Model Context Protocol (MCP) server](https://cloro.dev/docs/integrations/mcp) for [cloro](https://cloro.dev), the LLM scraping API that includes a Google SERP API. It gives Claude, Codex, Cursor and any MCP client answers from ChatGPT, Gemini, Google AI Mode and Google AI Overview, plus Google web search and Google News results. Ask your agent *"compare Google's top results for best LLM scraping API with ChatGPT's answer"* and it calls cloro and reasons over the parsed results and cited sources.
 
 Runs hosted at `mcp.cloro.dev`, or locally over stdio.
 
@@ -59,8 +59,6 @@ OAuth is off unless you set `CLERK_ISSUER`. The hosted server sets it to `https:
 | --- | --- |
 | `scrape_chatgpt` | [`POST /v1/monitor/chatgpt`](https://cloro.dev/docs/api-reference/endpoint/monitor-chatgpt) |
 | `scrape_gemini` | [`POST /v1/monitor/gemini`](https://cloro.dev/docs/api-reference/endpoint/monitor-gemini) |
-| `scrape_copilot` | [`POST /v1/monitor/copilot`](https://cloro.dev/docs/api-reference/endpoint/monitor-copilot) |
-| `scrape_perplexity` | [`POST /v1/monitor/perplexity`](https://cloro.dev/docs/api-reference/endpoint/monitor-perplexity) |
 | `scrape_google_ai_mode` | [`POST /v1/monitor/aimode`](https://cloro.dev/docs/api-reference/endpoint/monitor-aimode) |
 | `scrape_google` | [`POST /v1/monitor/google`](https://cloro.dev/docs/api-reference/endpoint/monitor-google) |
 | `scrape_google_news` | [`POST /v1/monitor/google/news`](https://cloro.dev/docs/api-reference/endpoint/monitor-google-news) |
@@ -73,6 +71,8 @@ The assistant tools take a `prompt` and a `country` (ISO 3166-1 alpha-2), plus a
 A Google result `link` can come back empty, or as a `google.com/goto` URL, with a `redirectLink` beside it. Pass the `redirectLink` to `resolve_google_redirect` to get the destination.
 
 There is no Grok tool. Grok is discontinued: grok.com shows a sign-up wall to logged-out visitors, and the cloro API rejects Grok calls with a `400` (`MODEL_UNAVAILABLE`).
+
+There are no Copilot or Perplexity tools. Both are discontinued: they block access for logged-out sessions, and the cloro API rejects their calls with a `400` (`MODEL_UNAVAILABLE`). These calls cost no credits.
 
 ## How it works
 
@@ -102,7 +102,7 @@ Because several MCP clients cannot set custom headers. If yours can, use the `Au
 
 ### Are there agent skills for cloro?
 
-Yes. [cloro-dev/skills](https://github.com/cloro-dev/skills) has one skill per surface (ChatGPT, Perplexity, Copilot, Gemini, Google AI Mode, Google AI Overview, Google Search, Google News) and skills for SERP research, LLM answer monitoring and AI visibility tracking. Install them with `npx skills add cloro-dev/skills`. The skills tell the agent which tool or endpoint to call, what it costs, and how to read the result. They work with this server or with the REST API.
+Yes. [cloro-dev/skills](https://github.com/cloro-dev/skills) has one skill per surface (ChatGPT, Gemini, Google AI Mode, Google AI Overview, Google Search, Google News) and skills for SERP research, LLM answer monitoring and AI visibility tracking. Install them with `npx skills add cloro-dev/skills`. The skills tell the agent which tool or endpoint to call, what it costs, and how to read the result. They work with this server or with the REST API.
 
 ## Learn more
 
