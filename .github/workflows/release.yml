@@ -1,0 +1,27 @@
+name: Release
+
+# Creates the vX.Y.Z tag and GitHub Release when a merge to main changes the
+# version in package.json. The server is not on npm: users run it from this
+# repo or the Cursor marketplace, so the release is the version marker.
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create the release for a new version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
+            echo "v$version already exists"
+          else
+            gh release create "v$version" --target "$GITHUB_SHA" --title "v$version" --generate-notes
+          fi
