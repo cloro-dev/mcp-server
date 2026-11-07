@@ -19,6 +19,7 @@ const EXPECTED_TOOLS = [
   "scrape_chatgpt",
   "scrape_gemini",
   "scrape_google_ai_mode",
+  "scrape_bing_aimode",
   "scrape_google",
   "scrape_google_news",
   "resolve_google_redirect",
@@ -117,7 +118,11 @@ describe("cloro MCP server", () => {
   });
 
   it("requires prompt and country on the prompt-engine tools", () => {
-    for (const name of ["scrape_chatgpt", "scrape_gemini"]) {
+    for (const name of [
+      "scrape_chatgpt",
+      "scrape_gemini",
+      "scrape_bing_aimode",
+    ]) {
       const tool = tools.find((t) => t.name === name)!;
       expect(tool.inputSchema.required).toEqual(
         expect.arrayContaining(["prompt", "country"]),
@@ -191,6 +196,67 @@ describe("cloro MCP server", () => {
     });
   });
 
+  it("advertises only the markdown and html include flags on scrape_bing_aimode", () => {
+    const tool = tools.find((t) => t.name === "scrape_bing_aimode")!;
+    const includeProps = tool.inputSchema.properties?.include?.properties;
+    expect(Object.keys(includeProps ?? {}).sort()).toEqual(["html", "markdown"]);
+    expect(Object.keys(tool.inputSchema.properties ?? {})).toContain("state");
+  });
+
+  it("forwards scrape_bing_aimode to /v1/monitor/bing/aimode", async () => {
+    const mock = vi.fn(() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            success: true,
+            result: { text: "answer", sources: [], citationPills: [] },
+          }),
+          {
+            status: 200,
+            headers: { "X-Credits-Charged": "6", "X-Credits-Remaining": "94" },
+          },
+        ),
+      ),
+    );
+    vi.stubGlobal("fetch", mock);
+
+    const args = {
+      prompt: "best running shoes",
+      country: "US",
+      include: { markdown: true },
+    };
+    const result = (await client.callTool({
+      name: "scrape_bing_aimode",
+      arguments: args,
+    })) as CallToolResult;
+
+    const [url, init] = mock.mock.calls[0] as unknown as [URL, RequestInit];
+    expect(url.pathname).toBe("/v1/monitor/bing/aimode");
+    expect(JSON.parse(init.body as string)).toEqual(args);
+    expect(JSON.parse((result.content[0] as { text: string }).text)).toEqual({
+      result: { text: "answer", sources: [], citationPills: [] },
+      credits: { charged: 6, remaining: 94 },
+    });
+  });
+
+  // The limit applies after URL encoding, so 3,500 plain characters pass and
+  // 1,000 CJK characters (9 encoded characters each) do not.
+  it("rejects a scrape_bing_aimode prompt that is too long after URL encoding", async () => {
+    const mock = vi.fn();
+    vi.stubGlobal("fetch", mock);
+
+    const result = (await client.callTool({
+      name: "scrape_bing_aimode",
+      arguments: { prompt: "中".repeat(1_000), country: "US" },
+    })) as CallToolResult;
+
+    expect(result.isError).toBe(true);
+    expect((result.content[0] as { text: string }).text).toContain(
+      "Prompt is too long",
+    );
+    expect(mock).not.toHaveBeenCalled();
+  });
+
   it("calls the reference endpoints with the query params the API requires", async () => {
     const cases = [
       {
@@ -203,6 +269,11 @@ describe("cloro MCP server", () => {
         name: "list_countries",
         args: { model: "gemini" },
         expected: "/v1/countries?model=gemini",
+      },
+      {
+        name: "list_countries",
+        args: { model: "bing_aimode" },
+        expected: "/v1/countries?model=bing_aimode",
       },
     ];
 
@@ -321,6 +392,7 @@ describe("cloro MCP server", () => {
     expect(instructions).toContain("sync surcharge");
     expect(instructions).toContain("/v1/async/task");
     expect(instructions).toContain("resolve_google_redirect");
+    expect(instructions).toContain("Bing AI Mode");
   });
 
   it("returns API errors as tool errors with the envelope details", async () => {

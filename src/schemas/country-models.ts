@@ -1,5 +1,6 @@
 import { AIMODE_AVAILABLE_COUNTRIES } from "./aimode.schema";
 import { AIOVERVIEW_AVAILABLE_COUNTRIES } from "./aioverview.schema";
+import { BING_AIMODE_AVAILABLE_COUNTRIES } from "./bing-aimode.schema";
 import { CHATGPT_AVAILABLE_COUNTRIES } from "./chatgpt.schema";
 import { COPILOT_AVAILABLE_COUNTRIES } from "./copilot.schema";
 import { GEMINI_AVAILABLE_COUNTRIES } from "./gemini.schema";
@@ -15,6 +16,7 @@ import { PERPLEXITY_AVAILABLE_COUNTRIES } from "./perplexity.schema";
 export const COUNTRY_MODELS = [
   "aimode",
   "aioverview",
+  "bing_aimode",
   "chatgpt",
   "copilot",
   "gemini",
@@ -28,6 +30,7 @@ export type CountryModel = (typeof COUNTRY_MODELS)[number];
 export const MODEL_COUNTRIES: Record<CountryModel, string[]> = {
   aimode: AIMODE_AVAILABLE_COUNTRIES,
   aioverview: AIOVERVIEW_AVAILABLE_COUNTRIES,
+  bing_aimode: BING_AIMODE_AVAILABLE_COUNTRIES,
   chatgpt: CHATGPT_AVAILABLE_COUNTRIES,
   copilot: COPILOT_AVAILABLE_COUNTRIES,
   gemini: GEMINI_AVAILABLE_COUNTRIES,

@@ -1,6 +1,6 @@
 # cloro MCP Server
 
-A [Model Context Protocol (MCP) server](https://cloro.dev/docs/integrations/mcp) for [cloro](https://cloro.dev), the LLM scraping API that includes a Google SERP API. It gives Claude, Codex, Cursor and any MCP client answers from ChatGPT, Gemini, Google AI Mode and Google AI Overview, plus Google web search and Google News results. Ask your agent *"compare Google's top results for best LLM scraping API with ChatGPT's answer"* and it calls cloro and reasons over the parsed results and cited sources.
+A [Model Context Protocol (MCP) server](https://cloro.dev/docs/integrations/mcp) for [cloro](https://cloro.dev), the LLM scraping API that includes a Google SERP API. It gives Claude, Codex, Cursor and any MCP client answers from ChatGPT, Gemini, Google AI Mode, Google AI Overview and Bing AI Mode, plus Google web search and Google News results. Ask your agent *"compare Google's top results for best LLM scraping API with ChatGPT's answer"* and it calls cloro and reasons over the parsed results and cited sources.
 
 Runs hosted at `mcp.cloro.dev`, or locally over stdio.
 
@@ -60,6 +60,7 @@ OAuth is off unless you set `CLERK_ISSUER`. The hosted server sets it to `https:
 | `scrape_chatgpt` | [`POST /v1/monitor/chatgpt`](https://cloro.dev/docs/api-reference/endpoint/monitor-chatgpt) |
 | `scrape_gemini` | [`POST /v1/monitor/gemini`](https://cloro.dev/docs/api-reference/endpoint/monitor-gemini) |
 | `scrape_google_ai_mode` | [`POST /v1/monitor/aimode`](https://cloro.dev/docs/api-reference/endpoint/monitor-aimode) |
+| `scrape_bing_aimode` | [`POST /v1/monitor/bing/aimode`](https://cloro.dev/docs/api-reference/endpoint/monitor-bing-aimode) |
 | `scrape_google` | [`POST /v1/monitor/google`](https://cloro.dev/docs/api-reference/endpoint/monitor-google) |
 | `scrape_google_news` | [`POST /v1/monitor/google/news`](https://cloro.dev/docs/api-reference/endpoint/monitor-google-news) |
 | `resolve_google_redirect` | [`POST /v1/monitor/google/goto`](https://cloro.dev/docs/api-reference/endpoint/google/resolve-goto) |
