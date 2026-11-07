@@ -1,5 +1,6 @@
 import {
   aimodeSchema,
+  bingAimodeSchema,
   chatgptSchema,
   geminiSchema,
   googleNewsSchema,
@@ -24,6 +25,10 @@ const INCLUDE_DOC =
   "Optional flags for heavier payload fields, each off by default: markdown (the answer rendered as markdown), html (the answer page HTML), rawResponse (the engine's unprocessed response payload). Leave unset for the leanest response.";
 const AIMODE_INCLUDE_DOC =
   "Optional flags for heavier payload fields, each off by default: markdown (the answer rendered as markdown), html (the answer page HTML). Leave unset for the leanest response.";
+const BING_AIMODE_INCLUDE_DOC =
+  "Optional flags for heavier payload fields, each off by default: markdown (the answer rendered as markdown), html (a CDN URL of the rendered Bing page). Leave unset for the leanest response.";
+const BING_AIMODE_PROMPT_DOC =
+  "The prompt to submit to Bing AI Mode. The maximum is 3,500 characters after URL encoding, so non-Latin scripts get fewer characters.";
 const NEWS_INCLUDE_DOC =
   "Optional flag, off by default: html (the result page HTML). Leave unset for the leanest response.";
 const CHATGPT_INCLUDE_DOC =
@@ -81,7 +86,7 @@ const SCRAPE_ANNOTATIONS = {
 // superRefine checks (state requires country "US", query/url exclusivity),
 // so those arrive as API validation errors rather than client-side ones.
 
-/** The four prompt-in/answer-out engines share everything but the engine name. */
+/** The prompt-in/answer-out engines share everything but the engine name. */
 const promptEngineTool = (tool: {
   name: string;
   path: string;
@@ -156,6 +161,20 @@ const MONITOR_TOOLS: MonitorTool[] = [
       include: AIMODE_INCLUDE_DOC,
     }),
   },
+  promptEngineTool({
+    name: "scrape_bing_aimode",
+    path: "/v1/monitor/bing/aimode",
+    title: "Scrape Bing AI Mode",
+    engine: "Bing AI Mode",
+    description:
+      "Submit a prompt to Bing AI Mode from a chosen country (and optionally US state) and return the answer text, cited sources and inline citation pills. Use this to see how Bing AI Mode answers a prompt and which brands/sources it mentions.",
+    shape: bingAimodeSchema.shape,
+    cost: costDoc(4, STATE_COST),
+    extraDocs: {
+      prompt: BING_AIMODE_PROMPT_DOC,
+      include: BING_AIMODE_INCLUDE_DOC,
+    },
+  }),
   {
     name: "scrape_google",
     path: "/v1/monitor/google",

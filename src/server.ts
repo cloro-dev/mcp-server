@@ -9,7 +9,7 @@ import { registerReferenceTools } from "./tools/reference-tools";
  * wrapper over the public cloro API — auth, rate limiting, credits, and
  * concurrency are all enforced by the API itself.
  */
-const INSTRUCTIONS = `cloro scrapes AI answer engines (ChatGPT, Gemini, Google AI Mode) and Google Search and News, geo-targeted by country.
+const INSTRUCTIONS = `cloro scrapes AI answer engines (ChatGPT, Gemini, Google AI Mode, Bing AI Mode) and Google Search and News, geo-targeted by country.
 
 Costs: every scrape tool calls the sync API and costs its base credits, plus any add-ons, plus a 2-credit sync surcharge. Each tool description states its cost. Each result carries credits.charged and credits.remaining. list_countries and list_states are free. resolve_google_redirect costs 1 credit and has no surcharge.
 
@@ -21,7 +21,7 @@ export function buildServer(apiKey: string): McpServer {
   const server = new McpServer(
     {
       name: "cloro",
-      version: "0.5.0",
+      version: "0.6.0",
     },
     { instructions: INSTRUCTIONS },
   );

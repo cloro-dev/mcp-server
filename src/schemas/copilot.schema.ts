@@ -4,7 +4,7 @@ import { createCountrySchema } from "./country.schema";
 import { ALL_COUNTRY_CODES } from "./all-countries";
 import { getAvailableCountries } from "./utils";
 
-const COPILOT_BLOCKED_COUNTRIES: string[] = [
+export const COPILOT_BLOCKED_COUNTRIES: string[] = [
   "BY", // Belarus
   "CN", // China
   "IR",
