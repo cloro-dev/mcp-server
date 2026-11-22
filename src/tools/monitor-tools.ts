@@ -211,7 +211,7 @@ const MONITOR_TOOLS: MonitorTool[] = [
     path: "/v1/monitor/bing",
     title: "Scrape Bing Search",
     description:
-      "Run a Bing search from a chosen country and return organic results, with optional extraction of Bing's AI Overview (include.aioverview), the AI summary at the top of the results page. The country picks Bing's market. There is no state or device option. The result has the same shapes as scrape_google: organicResults and aioverview." +
+      "Run a Bing search from a chosen country and return organic results and ads, with optional extraction of Bing's AI Overview (include.aioverview), the AI summary at the top of the results page. The country picks Bing's market. There is no state or device option. The result has the same shapes as scrape_google: organicResults, ads and aioverview. ads costs no extra credits and is absent when the page has none." +
       costDoc(3, "each page after the first adds 2; include.aioverview adds 2"),
     inputSchema: describeFields(bingSchema.shape, {
       query:
@@ -221,7 +221,7 @@ const MONITOR_TOOLS: MonitorTool[] = [
       first:
         "The result to start at, as in Bing's own first parameter (1 is the first result). Bing shows its AI Overview only on its first page, so a value above 1 returns none.",
       include:
-        "Optional flags, each off by default. Set aioverview: true to extract Bing's AI Overview (or { markdown: true } to also get it as markdown), html: true to get a URL of each rendered results page. Leave unset for organic results only.",
+        "Optional flags, each off by default. Set aioverview: true to extract Bing's AI Overview (or { markdown: true } to also get it as markdown), html: true to get a URL of each rendered results page. Leave unset for organic results and ads only.",
     }),
   },
   {
