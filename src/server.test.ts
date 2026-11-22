@@ -21,6 +21,7 @@ const EXPECTED_TOOLS = [
   "scrape_google_ai_mode",
   "scrape_bing_aimode",
   "scrape_google",
+  "scrape_bing",
   "scrape_google_news",
   "resolve_google_redirect",
   "list_countries",
@@ -257,6 +258,80 @@ describe("cloro MCP server", () => {
     expect(mock).not.toHaveBeenCalled();
   });
 
+  it("advertises query, country, pages, first and the html and aioverview include flags on scrape_bing", () => {
+    const tool = tools.find((t) => t.name === "scrape_bing")!;
+    expect(Object.keys(tool.inputSchema.properties ?? {}).sort()).toEqual([
+      "country",
+      "first",
+      "include",
+      "pages",
+      "query",
+    ]);
+    expect(tool.inputSchema.required).toEqual(
+      expect.arrayContaining(["query", "country"]),
+    );
+    const includeProps = tool.inputSchema.properties?.include?.properties;
+    expect(Object.keys(includeProps ?? {}).sort()).toEqual([
+      "aioverview",
+      "html",
+    ]);
+  });
+
+  it("forwards scrape_bing to /v1/monitor/bing", async () => {
+    const bingResult = {
+      organicResults: [
+        {
+          position: 1,
+          title: "Running shoes",
+          link: "https://example.com/",
+          displayedLink: "example.com",
+        },
+      ],
+      aioverview: { text: "answer", sources: [] },
+    };
+    const mock = vi.fn(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ success: true, result: bingResult }), {
+          status: 200,
+          headers: { "X-Credits-Charged": "7", "X-Credits-Remaining": "93" },
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", mock);
+
+    const args = {
+      query: "best running shoes",
+      country: "US",
+      include: { aioverview: { markdown: true } },
+    };
+    const result = (await client.callTool({
+      name: "scrape_bing",
+      arguments: args,
+    })) as CallToolResult;
+
+    const [url, init] = mock.mock.calls[0] as unknown as [URL, RequestInit];
+    expect(url.pathname).toBe("/v1/monitor/bing");
+    expect(JSON.parse(init.body as string)).toEqual({ ...args, pages: 1 });
+    expect(JSON.parse((result.content[0] as { text: string }).text)).toEqual({
+      result: bingResult,
+      credits: { charged: 7, remaining: 93 },
+    });
+  });
+
+  // Bing Search shares Bing AI Mode's blocked countries.
+  it("rejects scrape_bing from a blocked country", async () => {
+    const mock = vi.fn();
+    vi.stubGlobal("fetch", mock);
+
+    const result = (await client.callTool({
+      name: "scrape_bing",
+      arguments: { query: "best running shoes", country: "KR" },
+    })) as CallToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(mock).not.toHaveBeenCalled();
+  });
+
   it("calls the reference endpoints with the query params the API requires", async () => {
     const cases = [
       {
@@ -274,6 +349,11 @@ describe("cloro MCP server", () => {
         name: "list_countries",
         args: { model: "bing_aimode" },
         expected: "/v1/countries?model=bing_aimode",
+      },
+      {
+        name: "list_countries",
+        args: { model: "bing" },
+        expected: "/v1/countries?model=bing",
       },
     ];
 
@@ -393,6 +473,7 @@ describe("cloro MCP server", () => {
     expect(instructions).toContain("/v1/async/task");
     expect(instructions).toContain("resolve_google_redirect");
     expect(instructions).toContain("Bing AI Mode");
+    expect(instructions).toContain("Bing Search");
   });
 
   it("returns API errors as tool errors with the envelope details", async () => {

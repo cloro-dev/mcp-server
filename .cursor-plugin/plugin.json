@@ -1,8 +1,8 @@
 {
   "name": "cloro",
   "displayName": "cloro",
-  "version": "0.6.0",
-  "description": "Query ChatGPT, Gemini, Google AI Mode, Bing AI Mode, Google Search and Google News as agent tools, with country and state-level geo-targeting.",
+  "version": "0.7.0",
+  "description": "Query ChatGPT, Gemini, Google AI Mode, Bing AI Mode, Google Search, Google News and Bing Search as agent tools, with country and state-level geo-targeting.",
   "author": {
     "name": "cloro",
     "email": "info@cloro.dev"
@@ -14,6 +14,7 @@
     "ai-search",
     "chatgpt",
     "google-search",
+    "bing-search",
     "scraping",
     "geo-targeting"
   ],

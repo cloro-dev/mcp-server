@@ -1,6 +1,6 @@
 # cloro MCP Server
 
-A [Model Context Protocol (MCP) server](https://cloro.dev/docs/integrations/mcp) for [cloro](https://cloro.dev), the LLM scraping API that includes a Google SERP API. It gives Claude, Codex, Cursor and any MCP client answers from ChatGPT, Gemini, Google AI Mode, Google AI Overview and Bing AI Mode, plus Google web search and Google News results. Ask your agent *"compare Google's top results for best LLM scraping API with ChatGPT's answer"* and it calls cloro and reasons over the parsed results and cited sources.
+A [Model Context Protocol (MCP) server](https://cloro.dev/docs/integrations/mcp) for [cloro](https://cloro.dev), the LLM scraping API that includes a Google SERP API. It gives Claude, Codex, Cursor and any MCP client answers from ChatGPT, Gemini, Google AI Mode, Google AI Overview and Bing AI Mode, plus Google web search, Google News and Bing web search results. Ask your agent *"compare Google's top results for best LLM scraping API with ChatGPT's answer"* and it calls cloro and reasons over the parsed results and cited sources.
 
 Runs hosted at `mcp.cloro.dev`, or locally over stdio.
 
@@ -62,12 +62,13 @@ OAuth is off unless you set `CLERK_ISSUER`. The hosted server sets it to `https:
 | `scrape_google_ai_mode` | [`POST /v1/monitor/aimode`](https://cloro.dev/docs/api-reference/endpoint/monitor-aimode) |
 | `scrape_bing_aimode` | [`POST /v1/monitor/bing/aimode`](https://cloro.dev/docs/api-reference/endpoint/monitor-bing-aimode) |
 | `scrape_google` | [`POST /v1/monitor/google`](https://cloro.dev/docs/api-reference/endpoint/monitor-google) |
+| `scrape_bing` | [`POST /v1/monitor/bing`](https://cloro.dev/docs/api-reference/endpoint/monitor-bing) |
 | `scrape_google_news` | [`POST /v1/monitor/google/news`](https://cloro.dev/docs/api-reference/endpoint/monitor-google-news) |
 | `resolve_google_redirect` | [`POST /v1/monitor/google/goto`](https://cloro.dev/docs/api-reference/endpoint/google/resolve-goto) |
 | `list_countries` | [`GET /v1/countries`](https://cloro.dev/docs/api-reference/endpoint/countries) |
 | `list_states` | [`GET /v1/states`](https://cloro.dev/docs/api-reference/endpoint/states) |
 
-The assistant tools take a `prompt` and a `country` (ISO 3166-1 alpha-2), plus an optional `state` for US state-level targeting. The Google tools take `gl` for the result geography and an optional `hl` for the interface language; `country` still works as a deprecated alias for `gl`. `scrape_google_ai_mode` targets sub-country with `location` or `uule` rather than `state`. `scrape_google` runs either from a `query` plus `gl`, or from a complete `google.com/search` URL that carries the query and pagination itself, and accepts `include.aioverview` for Google's AI Overview. Every tool takes an optional `include` object for heavier payload fields; leave it unset for the leanest response.
+The assistant tools take a `prompt` and a `country` (ISO 3166-1 alpha-2), plus an optional `state` for US state-level targeting. The Google tools take `gl` for the result geography and an optional `hl` for the interface language; `country` still works as a deprecated alias for `gl`. `scrape_google_ai_mode` targets sub-country with `location` or `uule` rather than `state`. `scrape_google` runs either from a `query` plus `gl`, or from a complete `google.com/search` URL that carries the query and pagination itself, and accepts `include.aioverview` for Google's AI Overview. `scrape_bing` takes a `query` and a `country`, which picks Bing's market, plus an optional `pages` and `first`. It has no `state` or `device` option, and accepts `include.aioverview` for Bing's AI Overview. Every tool takes an optional `include` object for heavier payload fields; leave it unset for the leanest response.
 
 A Google result `link` can come back empty, or as a `google.com/goto` URL, with a `redirectLink` beside it. Pass the `redirectLink` to `resolve_google_redirect` to get the destination.
 

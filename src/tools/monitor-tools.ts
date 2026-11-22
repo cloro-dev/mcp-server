@@ -1,6 +1,7 @@
 import {
   aimodeSchema,
   bingAimodeSchema,
+  bingSchema,
   chatgptSchema,
   geminiSchema,
   googleNewsSchema,
@@ -203,6 +204,24 @@ const MONITOR_TOOLS: MonitorTool[] = [
       pages: PAGES_DOC,
       include:
         "Optional flags. Set aioverview: true to extract Google's AI Overview (or { markdown: true } for markdown), paaAioverview: true to hydrate AI answers in People Also Ask. Leave unset for organic results only.",
+    }),
+  },
+  {
+    name: "scrape_bing",
+    path: "/v1/monitor/bing",
+    title: "Scrape Bing Search",
+    description:
+      "Run a Bing search from a chosen country and return organic results, with optional extraction of Bing's AI Overview (include.aioverview), the AI summary at the top of the results page. The country picks Bing's market. There is no state or device option. The result has the same shapes as scrape_google: organicResults and aioverview." +
+      costDoc(3, "each page after the first adds 2; include.aioverview adds 2"),
+    inputSchema: describeFields(bingSchema.shape, {
+      query:
+        "The search query. The maximum is 3,500 characters after URL encoding, so non-Latin scripts get fewer characters.",
+      country: COUNTRY_DOC,
+      pages: PAGES_DOC,
+      first:
+        "The result to start at, as in Bing's own first parameter (1 is the first result). Bing shows its AI Overview only on its first page, so a value above 1 returns none.",
+      include:
+        "Optional flags, each off by default. Set aioverview: true to extract Bing's AI Overview (or { markdown: true } to also get it as markdown), html: true to get a URL of each rendered results page. Leave unset for organic results only.",
     }),
   },
   {

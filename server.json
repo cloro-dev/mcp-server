@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "dev.cloro/cloro",
   "title": "cloro",
-  "description": "Scrape AI answer engines and Google Search/News with country and state-level geo-targeting.",
-  "version": "0.6.0",
+  "description": "Scrape AI answer engines, Google Search/News and Bing Search with country and state geo-targeting.",
+  "version": "0.7.0",
   "websiteUrl": "https://cloro.dev/docs/integrations/mcp",
   "repository": {
     "url": "https://github.com/cloro-dev/mcp-server",

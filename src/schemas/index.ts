@@ -10,6 +10,7 @@
 export * from "./aimode.schema";
 export * from "./aioverview.schema";
 export * from "./bing-aimode.schema";
+export * from "./bing.schema";
 export * from "./chatgpt.schema";
 export * from "./copilot.schema";
 export * from "./gemini.schema";
