@@ -17,6 +17,8 @@ export const bingSchema = z.object({
     ALL_COUNTRY_CODES,
     BING_AIMODE_BLOCKED_COUNTRIES,
   ),
+  pages: z.number().int().positive().max(10).default(1),
+  first: z.number().int().positive().optional(),
   include: z
     .object({
       html: z.boolean(),

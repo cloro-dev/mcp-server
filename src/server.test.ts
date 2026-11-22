@@ -258,11 +258,13 @@ describe("cloro MCP server", () => {
     expect(mock).not.toHaveBeenCalled();
   });
 
-  it("advertises only query, country and the html and aioverview include flags on scrape_bing", () => {
+  it("advertises query, country, pages, first and the html and aioverview include flags on scrape_bing", () => {
     const tool = tools.find((t) => t.name === "scrape_bing")!;
     expect(Object.keys(tool.inputSchema.properties ?? {}).sort()).toEqual([
       "country",
+      "first",
       "include",
+      "pages",
       "query",
     ]);
     expect(tool.inputSchema.required).toEqual(
@@ -309,7 +311,7 @@ describe("cloro MCP server", () => {
 
     const [url, init] = mock.mock.calls[0] as unknown as [URL, RequestInit];
     expect(url.pathname).toBe("/v1/monitor/bing");
-    expect(JSON.parse(init.body as string)).toEqual(args);
+    expect(JSON.parse(init.body as string)).toEqual({ ...args, pages: 1 });
     expect(JSON.parse((result.content[0] as { text: string }).text)).toEqual({
       result: bingResult,
       credits: { charged: 7, remaining: 93 },
