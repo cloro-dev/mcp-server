@@ -6,6 +6,7 @@ import {
   geminiSchema,
   googleNewsSchema,
   googleGotoSchema,
+  googleProductSchema,
   googleSchema,
 } from "../schemas";
 import { z } from "zod";
@@ -40,6 +41,14 @@ const CHATGPT_LEGACY_DOC =
   "Serve ChatGPT's desktop UI instead of the default mobile-web UI. Defaults to false.";
 const CHATGPT_DISABLE_WEB_SEARCH_DOC =
   "Stop cloro from forcing web search, to get the answer ChatGPT gives on its own. ChatGPT then searches only when it decides to, so expect empty sources, citationPills and searchQueries. Defaults to false (web search forced). Same cost.";
+
+// googleSchema is a ZodPipe (object -> transform) since url-mode decomposition
+// (ENG-536); the tool advertises the pipe's input object, minus the internal
+// datacenter flag. Filtering the shape avoids .omit(), which Zod rejects on
+// refined objects.
+const GOOGLE_INPUT_SHAPE = Object.fromEntries(
+  Object.entries(googleSchema.in.shape).filter(([key]) => key !== "datacenter"),
+) as Omit<typeof googleSchema.in.shape, "datacenter">;
 
 const promptDoc = (engine: string) => `The prompt to submit to ${engine}.`;
 const QUERY_DOC = "The search query.";
@@ -142,26 +151,6 @@ const MONITOR_TOOLS: MonitorTool[] = [
     shape: geminiSchema.shape,
     cost: costDoc(4, STATE_COST),
   }),
-  {
-    name: "scrape_google_ai_mode",
-    path: "/v1/monitor/aimode",
-    title: "Scrape Google AI Mode",
-    description:
-      "Submit a prompt to Google AI Mode from a chosen country and return the AI answer with cited sources. Supports location or UULE targeting and desktop/mobile emulation." +
-      costDoc(4),
-    // aimodeSchema is a ZodPipe (object -> transform) since geo
-    // normalization; the tool advertises the pipe's input object.
-    inputSchema: describeFields(aimodeSchema.in.shape, {
-      prompt: promptDoc("Google AI Mode"),
-      country: GOOGLE_COUNTRY_DOC,
-      gl: GL_DOC,
-      hl: HL_DOC,
-      location: LOCATION_DOC,
-      uule: UULE_DOC,
-      device: DEVICE_DOC,
-      include: AIMODE_INCLUDE_DOC,
-    }),
-  },
   promptEngineTool({
     name: "scrape_bing_aimode",
     path: "/v1/monitor/bing/aimode",
@@ -177,18 +166,36 @@ const MONITOR_TOOLS: MonitorTool[] = [
     },
   }),
   {
+    name: "scrape_google_ai_mode",
+    path: "/v1/monitor/aimode",
+    title: "Scrape Google AI Mode",
+    description:
+      "Submit a prompt to Google AI Mode from a chosen country and return the AI answer with cited sources. Supports location or UULE targeting and desktop/mobile emulation. An entry in shoppingCards or inlineProducts can carry a productResultToken; pass it to get_google_product within 5 minutes to get the full product." +
+      costDoc(4),
+    // aimodeSchema is a ZodPipe (object -> transform) since geo
+    // normalization; the tool advertises the pipe's input object.
+    inputSchema: describeFields(aimodeSchema.in.shape, {
+      prompt: promptDoc("Google AI Mode"),
+      country: GOOGLE_COUNTRY_DOC,
+      gl: GL_DOC,
+      hl: HL_DOC,
+      location: LOCATION_DOC,
+      uule: UULE_DOC,
+      device: DEVICE_DOC,
+      include: AIMODE_INCLUDE_DOC,
+    }),
+  },
+  {
     name: "scrape_google",
     path: "/v1/monitor/google",
     title: "Scrape Google Search",
     description:
-      "Run a Google search from a chosen country and return organic results, with optional AI Overview extraction (include.aioverview) and People-Also-Ask AI answers (include.paaAioverview). Two modes: structured (query + gl, with optional location/uule/pages) or url (a complete google.com/search URL that owns query, location, and pagination). Supports desktop, mobile, iOS, and Android emulation and multi-page results. A result link can come back empty with a redirectLink beside it; pass the redirectLink to resolve_google_redirect to get the destination." +
+      "Run a Google search from a chosen country and return organic results, with optional AI Overview extraction (include.aioverview) and People-Also-Ask AI answers (include.paaAioverview). Two modes: structured (query + gl, with optional location/uule/pages) or url (a complete google.com/search URL that owns query, location, and pagination). Supports desktop, mobile, iOS, and Android emulation and multi-page results. A result link can come back empty with a redirectLink beside it; pass the redirectLink to resolve_google_redirect to get the destination. An entry in shoppingCards or aioverview.inlineProducts can carry a productResultToken; pass it to get_google_product within 5 minutes to get the full product." +
       costDoc(
         3,
         `include.aioverview and/or include.paaAioverview add 2 once; ${PAGES_COST}`,
       ),
-    // googleSchema is a ZodPipe (object -> transform) since url-mode
-    // decomposition (ENG-536); the tool advertises the pipe's input object.
-    inputSchema: describeFields(googleSchema.in.shape, {
+    inputSchema: describeFields(GOOGLE_INPUT_SHAPE, {
       query: "The search query. Required unless url is provided.",
       url: "A complete google.com/search URL to fetch instead of building one from structured fields. When set, query/location/uule/pages must be omitted (the URL owns them); gl and hl are read from the URL's gl/hl parameters; an explicit gl or hl must agree with the URL's copy.",
       country: GOOGLE_COUNTRY_DOC,
@@ -202,6 +209,7 @@ const MONITOR_TOOLS: MonitorTool[] = [
       uule: UULE_DOC,
       device: GOOGLE_DEVICE_DOC,
       pages: PAGES_DOC,
+      udm: "Optional. Set to 14 to search Google's Web tab, which lists web results only. No other value is accepted. In url mode, udm=14 inside the URL does the same.",
       include:
         "Optional flags. Set aioverview: true to extract Google's AI Overview (or { markdown: true } for markdown), paaAioverview: true to hydrate AI answers in People Also Ask. Leave unset for organic results only.",
     }),
@@ -248,9 +256,21 @@ const MONITOR_TOOLS: MonitorTool[] = [
     path: "/v1/monitor/google/goto",
     title: "Resolve a Google redirect link",
     description:
-      "Resolve one Google redirect link to its destination URL. Use it when a link or url field from scrape_google, scrape_google_news or scrape_google_ai_mode is empty, missing, or a google.com/goto URL: pass that result's redirectLink. Returns { url }. A link that does not resolve returns a 502; retry it later. Costs 1 credit, with no sync surcharge, and only when the destination is returned.",
+      "Resolve one Google redirect link to its destination URL. Use it when a link or url field from scrape_google, scrape_google_news or scrape_google_ai_mode is empty, missing, or a google.com/goto URL: pass that result's redirectLink. Returns { url }. A link that does not resolve returns a 502; retry it later. Costs 0 credits.",
     inputSchema: describeFields(googleGotoSchema.shape, {
       url: "The redirectLink value: an absolute https://www.google.com/goto?url=... or https://www.google.com/url?... link.",
+    }),
+  },
+  {
+    name: "get_google_product",
+    path: "/v1/monitor/google/product",
+    title: "Get a Google product",
+    description:
+      "Get the full details of one Google shopping product: merchant offers, images, description, specifications, reviews and related products. Pass a productResultToken from scrape_google (result.shoppingCards[] or result.aioverview.inlineProducts[]) or scrape_google_ai_mode (result.shoppingCards[] or result.inlineProducts[]). A token lasts at most 5 minutes from the scrape that issued it, so call this tool directly after that scrape. Returns result.productResults with one product. A 410 (productResultTokenExpired) means the token expired: run the scrape again to get a new token. A 404 (productResultTokenUnknown) means the token is not recognized. A 502 means Google returned no usable product data." +
+      costDoc(1, "charged only when the product is returned"),
+    inputSchema: describeFields(googleProductSchema.shape, {
+      productResultToken:
+        "The productResultToken value from a shopping card or inline product of a scrape_google or scrape_google_ai_mode result. Send it unchanged.",
     }),
   },
 ];

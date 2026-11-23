@@ -15,17 +15,23 @@ import { buildServer } from "./server";
 
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
+// Free reads of cloro's own data: no credit cost, no live engine.
+const isReferenceTool = (name: string): boolean =>
+  name.startsWith("list_") || name === "get_credits";
+
 const EXPECTED_TOOLS = [
   "scrape_chatgpt",
   "scrape_gemini",
-  "scrape_google_ai_mode",
   "scrape_bing_aimode",
+  "scrape_google_ai_mode",
   "scrape_google",
   "scrape_bing",
   "scrape_google_news",
   "resolve_google_redirect",
+  "get_google_product",
   "list_countries",
   "list_states",
+  "get_credits",
 ];
 
 type ToolSchema = {
@@ -82,8 +88,8 @@ describe("cloro MCP server", () => {
       expect(tool.annotations?.readOnlyHint, tool.name).toBe(true);
       expect(tool.annotations?.destructiveHint, tool.name).toBe(false);
       // Monitor tools hit live external engines and re-charge on every
-      // call; reference lookups read fixed lists and are free to repeat.
-      const isReference = tool.name.startsWith("list_");
+      // call; reference lookups read cloro's own data and are free to repeat.
+      const isReference = isReferenceTool(tool.name);
       expect(tool.annotations?.openWorldHint, tool.name).toBe(!isReference);
       expect(tool.annotations?.idempotentHint, tool.name).toBe(
         isReference ? true : undefined,
@@ -103,7 +109,7 @@ describe("cloro MCP server", () => {
   // conform, so only the tools with a fixed response shape declare one.
   it("declares an outputSchema only on the reference tools", () => {
     for (const tool of tools) {
-      const isReference = tool.name.startsWith("list_");
+      const isReference = isReferenceTool(tool.name);
       expect(Boolean(tool.outputSchema), tool.name).toBe(isReference);
     }
   });
@@ -151,6 +157,16 @@ describe("cloro MCP server", () => {
   it("keeps scrape_google's fields optional for query/url dual mode", () => {
     const tool = tools.find((t) => t.name === "scrape_google")!;
     expect(tool.inputSchema.required ?? []).toEqual([]);
+  });
+
+  it("keeps the internal datacenter flag off scrape_google", () => {
+    const tool = tools.find((t) => t.name === "scrape_google")!;
+    expect(tool.inputSchema.properties).not.toHaveProperty("datacenter");
+  });
+
+  it("offers udm on scrape_google, with 14 as its only value", () => {
+    const tool = tools.find((t) => t.name === "scrape_google")!;
+    expect(tool.inputSchema.properties?.udm).toMatchObject({ const: 14 });
   });
 
   it("advertises scrape_google's public include flags", () => {
@@ -435,7 +451,7 @@ describe("cloro MCP server", () => {
   it("states the credit cost in every monitor tool description", async () => {
     const { tools: listed } = await client.listTools();
     for (const tool of listed) {
-      if (tool.name.startsWith("list_")) continue;
+      if (isReferenceTool(tool.name)) continue;
       expect(tool.description, tool.name).toMatch(/Costs \d+ credits?/);
     }
   });

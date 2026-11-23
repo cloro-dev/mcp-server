@@ -8,8 +8,8 @@
  * the location encoding — so the worker needs no knowledge of `url` mode to
  * serve the request.
  *
- * The supported set is closed: `q`, `gl`, `hl`, `uule`, `start`, `tbs`, `safe`
- * (plus `num`, read as depth). Params outside it are dropped rather than
+ * The supported set is closed: `q`, `gl`, `hl`, `uule`, `start`, `tbs`, `safe`,
+ * `udm` (plus `num`, read as depth). Params outside it are dropped rather than
  * forwarded, so the queue message stays a typed contract the worker can rely
  * on instead of an arbitrary bag whose keys nothing validates.
  *
@@ -61,6 +61,8 @@ export type GoogleUrlParsed = {
   tbs: string | null;
   /** `safe` — SafeSearch setting, passed through untouched. */
   safe: string | null;
+  /** `udm` — the results tab. Only 14, the Web tab, is read. */
+  udm: 14 | null;
 };
 
 export type GoogleUrlParseResult =
@@ -161,5 +163,6 @@ export const parseGoogleSearchUrl = (raw: string): GoogleUrlParseResult => {
     ),
     tbs: readTrimmed(url.searchParams, "tbs"),
     safe: readTrimmed(url.searchParams, "safe"),
+    udm: readTrimmed(url.searchParams, "udm") === "14" ? 14 : null,
   };
 };

@@ -8,8 +8,8 @@ import { structuredToolResult } from "../lib/tool-result";
 import type { CloroClient } from "../lib/cloro-client";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
-// Both tools read cloro's own fixed reference lists: no external entities, and
-// repeat calls return the same data without charging credits.
+// These tools read cloro's own data: no external entities, and repeat calls
+// charge no credits and change nothing.
 const REFERENCE_ANNOTATIONS = {
   ...BASE_READ_ONLY_ANNOTATIONS,
   idempotentHint: true,
@@ -27,6 +27,22 @@ const STATES_OUTPUT = {
   states: z
     .array(z.object({ code: z.string(), name: z.string() }))
     .describe("States available for state-level targeting."),
+};
+// GET /v1/credits (apps/api/src/controllers/v1/fetch-credits.ts). The balance
+// changes between calls, but a read charges nothing and changes nothing, so
+// the tool keeps the reference annotations.
+const CREDITS_OUTPUT = {
+  remaining: z.number().describe("Credits left in the organization."),
+  perCycle: z
+    .number()
+    .nullable()
+    .describe("Credits granted per billing cycle. Null on the free tier."),
+  cycleResetsAt: z
+    .string()
+    .nullable()
+    .describe(
+      "When the billing cycle ends and the credits reset (ISO 8601). Null on the free tier.",
+    ),
 };
 
 export function registerReferenceTools(
@@ -86,6 +102,30 @@ export function registerReferenceTools(
         return structuredToolResult({
           states: body as Array<{ code: string; name: string }>,
         });
+      }),
+  );
+
+  server.registerTool(
+    "get_credits",
+    {
+      title: "Get the credit balance",
+      description:
+        "Get the organization's credit balance: credits remaining, credits per billing cycle, and when the cycle resets. Free. Call it before a large run to check that the credits cover it. The balance can lag by up to 60 seconds.",
+      inputSchema: {},
+      outputSchema: CREDITS_OUTPUT,
+      annotations: REFERENCE_ANNOTATIONS,
+      _meta: toolMeta(),
+    },
+    () =>
+      observeToolCall("get_credits", async () => {
+        const { body } = await client.get("/v1/credits");
+        return structuredToolResult(
+          body as {
+            remaining: number;
+            perCycle: number | null;
+            cycleResetsAt: string | null;
+          },
+        );
       }),
   );
 }

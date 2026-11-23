@@ -17,6 +17,7 @@ export * from "./gemini.schema";
 export * from "./google.schema";
 export * from "./google-news.schema";
 export * from "./google-goto.schema";
+export * from "./google-product.schema";
 export * from "./grok.schema";
 export * from "./perplexity.schema";
 export * from "./country.schema";
