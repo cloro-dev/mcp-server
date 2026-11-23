@@ -51,6 +51,9 @@ export const googleSchema = z
     // "caller sent pages" from "caller sent nothing". The default is applied in
     // the transform, so parsed output is unchanged for structured requests.
     pages: z.number().positive().max(10).optional(),
+    // Google's `udm`, the results tab to search. 14 is the Web tab, the only
+    // one served besides the default.
+    udm: z.literal(14).optional(),
     include: z
       .object({
         html: z.boolean(),
@@ -59,6 +62,14 @@ export const googleSchema = z
           z
             .object({
               markdown: z.boolean(),
+              /**
+               * Store the HTML page with the AI Overview opened ("Show more"
+               * clicked). By default the page shows it as a browser does
+               * after load: Google opens some itself and leaves others
+               * collapsed. Desktop only: on phones "Show more" opens AI Mode.
+               * The parsed `aioverview` is the full answer either way.
+               */
+              expand: z.boolean(),
             })
             .partial(),
         ]),
@@ -78,6 +89,9 @@ export const googleSchema = z
       })
       .partial()
       .optional(),
+    // Temporary (ENG-1238): asks for the datacenter worker fleet. Only cloro's
+    // own organization is routed there.
+    datacenter: z.boolean().optional(),
   })
   .refine((data) => !(data.location && data.uule), {
     message: "Cannot set both location and uule; provide only one",
@@ -230,5 +244,8 @@ export const googleSchema = z
       startOffset: parsed.startOffset as number | undefined,
       tbs: parsed.tbs ?? undefined,
       safe: parsed.safe ?? undefined,
+      // The body's `udm` and the URL's can each only be 14, so they cannot
+      // disagree the way `hl` / `gl` can.
+      udm: data.udm ?? parsed.udm ?? undefined,
     };
   });

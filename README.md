@@ -65,12 +65,16 @@ OAuth is off unless you set `CLERK_ISSUER`. The hosted server sets it to `https:
 | `scrape_bing` | [`POST /v1/monitor/bing`](https://cloro.dev/docs/api-reference/endpoint/monitor-bing) |
 | `scrape_google_news` | [`POST /v1/monitor/google/news`](https://cloro.dev/docs/api-reference/endpoint/monitor-google-news) |
 | `resolve_google_redirect` | [`POST /v1/monitor/google/goto`](https://cloro.dev/docs/api-reference/endpoint/google/resolve-goto) |
+| `get_google_product` | [`POST /v1/monitor/google/product`](https://cloro.dev/docs/api-reference/endpoint/google/product) |
 | `list_countries` | [`GET /v1/countries`](https://cloro.dev/docs/api-reference/endpoint/countries) |
 | `list_states` | [`GET /v1/states`](https://cloro.dev/docs/api-reference/endpoint/states) |
+| `get_credits` | [`GET /v1/credits`](https://cloro.dev/docs/api-reference/endpoint/get-credits) |
 
 The assistant tools take a `prompt` and a `country` (ISO 3166-1 alpha-2), plus an optional `state` for US state-level targeting. The Google tools take `gl` for the result geography and an optional `hl` for the interface language; `country` still works as a deprecated alias for `gl`. `scrape_google_ai_mode` targets sub-country with `location` or `uule` rather than `state`. `scrape_google` runs either from a `query` plus `gl`, or from a complete `google.com/search` URL that carries the query and pagination itself, and accepts `include.aioverview` for Google's AI Overview. `scrape_bing` takes a `query` and a `country`, which picks Bing's market, plus an optional `pages` and `first`. It has no `state` or `device` option, and accepts `include.aioverview` for Bing's AI Overview. Every tool takes an optional `include` object for heavier payload fields; leave it unset for the leanest response.
 
 A Google result `link` can come back empty, or as a `google.com/goto` URL, with a `redirectLink` beside it. Pass the `redirectLink` to `resolve_google_redirect` to get the destination.
+
+A shopping card or inline product from `scrape_google` or `scrape_google_ai_mode` can carry a `productResultToken`. Pass it to `get_google_product` within 5 minutes of that scrape to get the full product: offers, images, specifications and reviews.
 
 There is no Grok tool. Grok is discontinued: grok.com shows a sign-up wall to logged-out visitors, and the cloro API rejects Grok calls with a `400` (`MODEL_UNAVAILABLE`).
 
@@ -92,7 +96,7 @@ No. `mcp.cloro.dev` is hosted and is the path most people should take. This repo
 
 ### Does it cost credits?
 
-Yes. The scrape tools call the sync API, so each call costs the API rate plus a 2-credit sync surcharge. For example, a ChatGPT call costs 7 credits (5 + 2). Each tool description states its cost, and each result returns the credits charged and remaining. `resolve_google_redirect` costs 1 credit, with no surcharge. `list_countries` and `list_states` read fixed reference lists and charge nothing. See [pricing](https://cloro.dev/pricing/).
+Yes. The scrape tools call the sync API, so each call costs the API rate plus a 2-credit sync surcharge. For example, a ChatGPT call costs 7 credits (5 + 2). Each tool description states its cost, and each result returns the credits charged and remaining. `get_google_product` costs 1 credit plus the surcharge, and only when the product is returned. `resolve_google_redirect`, `get_credits`, `list_countries` and `list_states` charge nothing. See [pricing](https://cloro.dev/pricing/).
 
 ### Why is my API key in the URL?
 

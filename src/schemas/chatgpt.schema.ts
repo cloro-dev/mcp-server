@@ -6,6 +6,7 @@ import { ALL_COUNTRY_CODES } from "./all-countries";
 import { getAvailableCountries } from "./utils";
 
 const CHATGPT_BLOCKED_COUNTRIES: string[] = [
+  "BY", // Belarus
   "CN", // China
   "HK", // Hong Kong
   "IR", // Iran
