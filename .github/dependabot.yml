@@ -1,0 +1,35 @@
+# One PR a week for every minor and patch bump, and one PR for every security
+# fix that lands between them. Majors stay separate, because they are the only
+# bumps that need reading. Same layout as monitor/.github/dependabot.yml.
+#
+# This package ships no lockfile, so Dependabot updates the ranges in
+# package.json. A range that still admits a vulnerable version keeps the alert
+# open even when a fresh install gets a fixed one.
+#
+# Dependabot waits 3 days after a release before it opens a version update
+# (the GitHub default since 2026-07, with no `cooldown` key). Security updates
+# do not wait.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      security:
+        applies-to: security-updates
+        patterns: ['*']
+      minor-and-patch:
+        applies-to: version-updates
+        patterns: ['*']
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']
