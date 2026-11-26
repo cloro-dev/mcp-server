@@ -23,7 +23,7 @@ export function buildServer(apiKey: string): McpServer {
   const server = new McpServer(
     {
       name: "cloro",
-      version: "0.9.0",
+      version: "0.9.1",
     },
     { instructions: INSTRUCTIONS },
   );
