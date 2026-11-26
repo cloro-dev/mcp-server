@@ -1,6 +1,6 @@
 # cloro MCP Server
 
-A [Model Context Protocol (MCP) server](https://cloro.dev/docs/integrations/mcp) for [cloro](https://cloro.dev), the LLM scraping API that includes a Google SERP API. It gives Claude, Codex, Cursor and any MCP client answers from ChatGPT, Gemini, Google AI Mode, Google AI Overview and Bing AI Mode, plus Google web search, Google News and Bing web search results. Ask your agent *"compare Google's top results for best LLM scraping API with ChatGPT's answer"* and it calls cloro and reasons over the parsed results and cited sources.
+A [Model Context Protocol (MCP) server](https://cloro.dev/docs/integrations/mcp) for [cloro](https://cloro.dev), the API for AI answers. It gives Claude, Codex, Cursor and any MCP client the answers and results of eight engines: ChatGPT, Google Search, Google News, Google AI Overview, Google AI Mode, Gemini, Bing Search and Bing AI Mode (Copilot Search in Bing). Ask your agent *"compare Google's top results for best LLM scraping API with ChatGPT's answer"* and it calls cloro and reasons over the parsed results and cited sources.
 
 Runs hosted at `mcp.cloro.dev`, or locally over stdio.
 

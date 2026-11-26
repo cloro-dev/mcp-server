@@ -1,8 +1,8 @@
 {
   "name": "cloro",
   "displayName": "cloro",
-  "version": "0.9.0",
-  "description": "Query ChatGPT, Gemini, Google AI Mode, Bing AI Mode, Google Search, Google News and Bing Search as agent tools, with country and state-level geo-targeting.",
+  "version": "0.9.1",
+  "description": "cloro is the API for AI answers. Query ChatGPT, Google Search, Google News, Google AI Overview, Google AI Mode, Gemini, Bing Search and Bing AI Mode as agent tools, by country, and by US state for ChatGPT, Gemini and Bing AI Mode.",
   "author": {
     "name": "cloro",
     "email": "info@cloro.dev"
