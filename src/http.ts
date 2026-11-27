@@ -26,7 +26,10 @@ export function extractCredential(req: Request): string | undefined {
     const match = /^(?:Bearer|ApiKey)\s+(.+)$/i.exec(header.trim());
     return (match?.[1] ?? header).trim() || undefined;
   }
-  return req.params.apiKey || undefined;
+  // Express 5 types a route param as string | string[], because a wildcard
+  // param is an array. `:apiKey` is a plain param, so it is always a string.
+  const pathKey = req.params.apiKey;
+  return typeof pathKey === "string" && pathKey ? pathKey : undefined;
 }
 
 function jsonRpcError(res: Response, status: number, message: string): void {
@@ -238,7 +241,14 @@ export function buildApp(): { app: Express; beginShutdown: () => void } {
 export function runHttpServer(): void {
   const { app, beginShutdown } = buildApp();
 
-  const server = app.listen(config.port, () => {
+  // Express 5 gives a listen error (for example EADDRINUSE) to this callback,
+  // not to an unhandled 'error' event. Exit non-zero, as Express 4 did, so
+  // the process does not stop with code 0 after it logs that it listens.
+  const server = app.listen(config.port, (error?: Error) => {
+    if (error) {
+      logger.error(`Failed to listen on port ${config.port}`, "MCP", {}, error);
+      process.exit(1);
+    }
     logger.info(`cloro MCP server listening on port ${config.port}`, "MCP");
     logger.info(
       oauth.enabled
