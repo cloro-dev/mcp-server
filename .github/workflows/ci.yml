@@ -11,9 +11,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # vitest 5 needs Node 22.12 or later, and npm on Node 20 cannot
+      # install it. Install, check, test and build on Node 22.
       - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
 
       - run: npm install
 
@@ -25,6 +27,12 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # The package supports Node 20 (engines >=20), so run the built server
+      # on Node 20 for the smoke test.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
 
       # The build is only useful if the server still speaks MCP. Run a real
       # initialize + tools/list handshake over stdio and assert the twelve tools
